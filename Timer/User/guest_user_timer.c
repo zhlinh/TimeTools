@@ -12,10 +12,15 @@
 #include <linux/ioctl.h> 
 #include <signal.h>   // for signal()   
 #include <sys/time.h> // struct itimeral. setitimer()
+#include <getopt.h>
+#include <string.h>
 
-#define MY_HOUR 19
-#define MY_MIN 44 
-#define MY_SEC 0
+#define DE_HOUR 12
+#define DE_MIN 30
+#define DE_SEC 0
+
+// default interval 5s
+#define DE_IV 5000000
 
 typedef void (*sighandler_t) (int);
 #define ADJ_FREQ_MAX  512000
@@ -23,7 +28,7 @@ typedef void (*sighandler_t) (int);
 #define OFFSET_1980     315532800
 #define OFFSET_1990 	631152000
 #define OFFSET_2000  	946684800
-#define OFFSET_2010		1262304000
+#define OFFSET_2010	1262304000
 
 #define IO_MAGIC '='
 //IOCTL
@@ -75,44 +80,106 @@ void printMsg(int num) {
     fclose(fp);
 }
 
+void usage(char *file) {
+    printf(
+           "Usage: [sudo] %s [OPTION]\n\n"
+           "-h \t\t show help information.\n"
+           "-t \t\t set the timer start point.\n"
+           "-i \t\t set the timer interval (default 5s)\n"
+           "\nExample: sudo %s -t 8:30:0 -i 5.3\n"
+           , file, file);
+}
+
 int main (int argc,char *argv[])
 {
     // Get system call result to determine successful or failed   
     int res = 0;
+    int ch;
     unsigned long long utime;
+    long ivtime = DE_IV;
     // Register printMsg to SIGALRM    
     signal(SIGALRM, printMsg); 
     struct timeval tv;
-    struct timezone tz;       
+    struct timezone tz;
     struct itimerval tick;     
     // Initialize struct  	  
     memset(&tick, 0, sizeof(tick));
     time_t timep;
     struct tm *tmp;
+    char *substr;
+    int flag = 1;
+
     time(&timep);
     //printf("time() : %d \n",timep);
     tmp=localtime(&timep);
-    tmp->tm_hour = MY_HOUR; 
-    tmp->tm_min = MY_MIN;
-    tmp->tm_sec = MY_SEC;
-    printf("my_timer set time at %02d-%02d-%02d %02d:%02d:%02d\n", \
-    tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
-    tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
-    timep = mktime(tmp); 
-    gettimeofday (&tv , &tz);
-    utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	  
-    // Timeout to run function first time  	  
-    tick.it_value.tv_sec = utime / 1000000;  // sec  	  
-    tick.it_value.tv_usec = utime % 1000000; // micro sec.  	  
+    tmp->tm_hour = DE_HOUR; 
+    tmp->tm_min = DE_MIN;
+    tmp->tm_sec = DE_SEC;
+
+    // read the command line
+    if (argc >= 2) {
+        while((ch = getopt(argc, argv, "t:i:h")) != -1) {
+            switch(ch) {
+                case 'h':
+                    usage(argv[0]);
+                    return 0;
+                case 't':
+                    substr = strtok(optarg, ":");
+                    tmp->tm_hour = atoi(substr);
+                    substr = strtok(NULL, ":");
+                    tmp->tm_min = atoi(substr);
+                    substr = strtok(NULL, ":");
+                    tmp->tm_sec = atoi(substr);
+                    // when as -t 12:30:05:04...
+                    if (strtok(NULL, ":") != NULL) {
+                        usage(argv[0]);
+                        return -1;
+                    }
+                    break;
+                case 'i':
+                    ivtime = (long)(atof(optarg) * 1000000);   
+                    break;
+                default:
+                    break;
+             }
+         }
+    } else {
+        flag = 0;
+    }
     // Interval time to run function  	  
-    tick.it_interval.tv_sec = 1;  	  
-    tick.it_interval.tv_usec = 0;  	  
+    tick.it_interval.tv_sec = ivtime / 1000000;   // sec. 	  
+    tick.it_interval.tv_usec = ivtime % 1000000;  // usec. 
+    
+    if (flag) {
+        // Timeout to run function first time 
+        timep = mktime(tmp); 
+        gettimeofday (&tv , &tz);
+        utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
+        tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
+        tick.it_value.tv_usec = utime % 1000000; // usec.
+    } else {
+        // excute immediately, set timer 1ms later
+        tick.it_value.tv_sec = 0;  // sec.  	  
+        tick.it_value.tv_usec = 1000; // usec.
+    }  
+   	  
     // Set timer, ITIMER_REAL : real-time to decrease timer,  	  
     //                          send SIGALRM when timeout  	  
     res = setitimer(ITIMER_REAL, &tick, NULL);  	  
     if (res) {  	  
-        printf("Set timer failed!!/n");  	  
-    }   
+        printf("Set timer failed!!\n");  	  
+    }
+
+    // print the timer info. 
+    if (flag) {
+        printf("my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+            tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+            tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    } else {
+        printf("my_timer will excute immediately(1ms later).\n");
+    }
+    printf("and the interval is %ld(s).%ld(us)\n", \
+        tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
     //fd = open (PCIE_DEV, O_RDWR);
     //if (fd == -1) {
     //    printf ("Please check the PCIE card and try again!\n");
@@ -126,5 +193,4 @@ int main (int argc,char *argv[])
     return 0;
 		
 }
-
 

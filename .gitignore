@@ -1,44 +1,18 @@
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# ignore all the files and diretories
+*
 
-# Precompiled Headers
-*.gch
-*.pch
+# add diretories
+!/GetTime/
+!/GetTime/**/
+!/Sync/
+!/Sync/**/
+!/Timer/
+!/Timer/**/
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+# add files
+!*.cpp
+!*.c
+!*.h
+!Makefile
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-
-# modules files
-*.mod.c
-Modules.symvers
-Module.symvers
-modules.order
-
-# temp files
-*~
-
-# log file
-*.log
+# you can add the special files here to ignore
