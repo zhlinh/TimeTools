@@ -1,5 +1,5 @@
 /**
- * This program is to sync pcie_time and system_time by driver directly.
+ * This program is to sync pcie_time and system_time by driver directly(ioctl).
  *
  * USAGE:
  * gcc -o [filename] [filename].c -lrt

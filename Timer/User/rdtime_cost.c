@@ -1,5 +1,8 @@
 /**
- * This program is to count the cost of reading time(SystemTime, IOTime, HyperCallTime). 
+ * This program is to count the cost of reading time(SystemTime, IOTime, HyperCallTime).
+ * SystemTime: system time
+ * IOTime: pcie ptp-card time from driver directly(ioctl)
+ * HyperCallTime: pcie ptp-card time from hypercall
  * 
  * USAGE:
  * gcc -o [filename] [filename].c -lrt

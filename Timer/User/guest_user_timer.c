@@ -1,7 +1,7 @@
 /**
  * This program is to read time(SystemTime, IOTime, HyperCallTime).
  * SystemTime: system time
- * IOTime: pcie ptp-card time from driver directly
+ * IOTime: pcie ptp-card time from driver directly(ioctl)
  * HyperCallTime: pcie ptp-card time from hypercall
  * 
  * USAGE:
