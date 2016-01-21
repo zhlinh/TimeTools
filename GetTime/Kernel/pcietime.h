@@ -10,7 +10,7 @@
 #define	TMR_CNT_H	0x24e18
 
 #define KVM_HC_GET_PCIE_TIME 100
-#define PCIE_DEV "/dev/pcie"
+#define PCIE_DEV "/dev/pcietime0"
 
 struct host_priv
 {

@@ -33,6 +33,8 @@
 #define HOST_GET_PCIE_TIME _IOR(IO_MAGIC,1,struct timespec)
 #define HOST_GET_LOCAL_SYSTEM_TIME _IOR(IO_MAGIC,2,struct timespec)
 
+#define PCIE_DEV "/dev/pcietime0"
+
 void get_system_time (struct timespec *time);//Get current system time
 void get_pcie_time (struct timespec *time); // Get the pcie rtc time 
 void printMsg(int);  
@@ -94,7 +96,7 @@ int main (int argc,char *argv[])
 	  if (res) {  	  
 	    printf("Set timer failed!!/n");  	  
 	  }   
-	  fd = open ("/dev/pcie",O_RDWR);
+	  fd = open (PCIE_DEV, O_RDWR);
 	  if (fd == -1) {
 		printf ("Please check the PCIE card and try again!\n");
 		return -1;

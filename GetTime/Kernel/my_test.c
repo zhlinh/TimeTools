@@ -38,6 +38,8 @@
 #define  BEGIN_KMEM { mm_segment_t  old_fs  =  get_fs();  set_fs(get_ds());  
 #define  END_KMEM  set_fs(old_fs); }
 
+#define PCIE_DEV "/dev/pcietime0"
+
 MODULE_LICENSE("GPL");
 
 int get_time(struct file *filp, struct timespec *time)
@@ -51,7 +53,6 @@ int init_module(void)
   struct file *filp;
   struct timespec timePCIE;
   int error = -ENOTTY;
-  char *dev = "/dev/pcie";
   printk("my_test module installing\n");
   /**
   fd = open ("/dev/pcie", O_RDWR, 0);
@@ -64,7 +65,7 @@ int init_module(void)
   ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
   */
 
-  filp = filp_open(dev, O_RDONLY, 0444);
+  filp = filp_open(PCIE_DEV, O_RDONLY, 0444);
   if (IS_ERR(filp)) { 
     printk("my_test ioctl failed\n");
     filp = NULL;  

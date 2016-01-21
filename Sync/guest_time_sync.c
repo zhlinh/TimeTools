@@ -18,7 +18,7 @@
 #define OFFSET_1980     315532800
 #define OFFSET_1990 	631152000
 #define OFFSET_2000  	946684800
-#define OFFSET_2010		1262304000
+#define OFFSET_2010	1262304000
 
 #define IO_MAGIC '='
 #define HOST_GET_PCIE_TIME _IOR(IO_MAGIC,1,struct timespec)
@@ -33,7 +33,10 @@
 
 #define LOCKMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
-#define PCIE_DEV "/dev/pcietime0"
+// CHANGED: add vmcall definition
+#define KVM_HC_GET_PCIE_TIME 100
+#define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
+#define TAI_OFFSET 35
 
 static int fd;
 int lockfile(int fd)
@@ -74,14 +77,47 @@ int already_running(const char *filename)
 }
 
 
-void get_time (struct timespec *time)
+void get_time(struct timespec *time)
 {
-    ioctl (fd, HOST_GET_LOCAL_SYSTEM_TIME, time);
+    //ioctl(fd, HOST_GET_LOCAL_SYSTEM_TIME, time);
+    clock_gettime(CLOCK_REALTIME, time);   
 }
 
-int set_time (struct timespec *time)
+// CHANGED: add get_pcie_time
+void get_pcie_time(struct timespec *time)
 {
-    return clock_settime (CLOCK_REALTIME,time);
+    unsigned long ret, rete;
+    unsigned  nr = KVM_HC_GET_PCIE_TIME;
+    asm volatile(KVM_HYPERCALL
+                 : "=a"(ret),"=b"(rete)
+                 : "a"(nr)
+                 :"memory");
+    time->tv_sec = ret;
+    time->tv_nsec = rete;
+}
+
+// CHANGED: add get_offset
+void get_offset(long long int *offset) {
+    unsigned long long tmr_cnt;
+    unsigned long long cur_cnt;
+    struct timespec tmr_time;
+    struct timespec cur_time;
+    get_time(&cur_time);
+    get_pcie_time(&tmr_time);
+    cur_cnt = (unsigned long long)cur_time.tv_sec * 1000000000 + cur_time.tv_nsec;
+    tmr_cnt = (unsigned long long)tmr_time.tv_sec * 1000000000 + tmr_time.tv_nsec;
+    // excute time delay
+    tmr_cnt -= TAI_OFFSET;
+    if (tmr_cnt > cur_cnt) {
+        *offset = (-(tmr_cnt - cur_cnt));
+    } else {
+        *offset = (cur_cnt - tmr_cnt);
+    }
+}
+
+int set_time(struct timespec *time)
+{
+    return clock_settime(CLOCK_REALTIME,time);
 }
 
 
@@ -263,7 +299,7 @@ int main (int argc,char *argv[])
         return -1;
     }
 
-    fd = open (PCIE_DEV, O_RDWR);
+    //fd = open (PCIE_DEV, O_RDWR);
     if (fd == -1) {
         printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
         return -1;
@@ -276,25 +312,25 @@ int main (int argc,char *argv[])
 
     while (1) {
         get_time (&timeSystem);
-        ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
-        if (ioctl(fd, HOST_GET_OFFSET, &offset) >= 0) {
-            if(displayPCIETime && already_running(LOCKFILE)) {
-                offset_from_PCIE.tv_sec = offset / 1000000000;
-                offset_from_PCIE.tv_nsec = offset % 1000000000;
-                printf ("----------Syncing process is running, offset is  %ld (ns) per %d (ms)\n",
-                        offset_from_PCIE.tv_nsec,sync_period /1000);
-            } else {
-                offset_from_PCIE.tv_sec = offset / 1000000000;
-                offset_from_PCIE.tv_nsec = offset % 1000000000;
-                //if(timePCIE.tv_sec < OFFSET_1990)
-                //{
-                //	if(displayResult)
-                //		printf ("----------The Master clock has not been ready! Please wait or Use sync -h to try again. \n");
-                //}else
-                {
-                    update_clock (&offset_from_PCIE);
-                    if(displayResult)
-                        printf ("----------Sync Success, Current Offset is %ld (ns)\n",offset_from_PCIE.tv_nsec);
+        get_pcie_time(&timePCIE);
+        get_offset(&offset);
+        if(displayPCIETime && already_running(LOCKFILE)) {
+            offset_from_PCIE.tv_sec = offset / 1000000000;
+            offset_from_PCIE.tv_nsec = offset % 1000000000;
+            printf ("----------Syncing process is running, offset is  %ld (ns) per %d (ms)\n",
+                offset_from_PCIE.tv_nsec,sync_period /1000);
+        } else {
+            offset_from_PCIE.tv_sec = offset / 1000000000;
+            offset_from_PCIE.tv_nsec = offset % 1000000000;
+            //if(timePCIE.tv_sec < OFFSET_1990)
+            //{
+            //	if(displayResult)
+            //		printf ("----------The Master clock has not been ready! Please wait or Use sync -h to try again. \n");
+            //}else
+            {
+                update_clock (&offset_from_PCIE);
+                if(displayResult) {
+                    printf ("----------Sync Success, Current Offset is %ld (ns)\n",offset_from_PCIE.tv_nsec);
                 }
             }
         }

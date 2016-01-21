@@ -39,3 +39,6 @@ modules.order
 
 # temp files
 *~
+
+# log file
+*.log
