@@ -15,6 +15,10 @@
 #include <getopt.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
 #define DE_HOUR 12
 #define DE_MIN 30
 #define DE_SEC 0
@@ -25,10 +29,10 @@
 typedef void (*sighandler_t) (int);
 #define ADJ_FREQ_MAX  512000
 
-#define OFFSET_1980     315532800
-#define OFFSET_1990 	631152000
-#define OFFSET_2000  	946684800
-#define OFFSET_2010	1262304000
+#define OFFSET_1980 315532800
+#define OFFSET_1990 631152000
+#define OFFSET_2000 946684800
+#define OFFSET_2010 1262304000
 
 #define IO_MAGIC '='
 //IOCTL
@@ -43,11 +47,18 @@ typedef void (*sighandler_t) (int);
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
+#define PORT 8888
+
+typedef unsigned char byte;
+
+
 void get_system_time (struct timespec *time);//Get current system time
 void get_pcie_time (struct timespec *time); // Get the pcie rtc time 
 void printMsg(int);  
 
 static int rd_num = 0;
+int s;  // socket descriptor
+int fd;  // file descriptor
 
 void get_system_time (struct timespec *time)
 {
@@ -57,7 +68,8 @@ void get_system_time (struct timespec *time)
 
 void get_pcie_time (struct timespec *time) 
 {
-    //ioctl(fd, HOST_GET_PCIE_TIME, time);
+    ioctl(fd, HOST_GET_PCIE_TIME, time);
+    /**
     unsigned long ret, rete;
     unsigned  nr = KVM_HC_GET_PCIE_TIME;
     asm volatile(KVM_HYPERCALL
@@ -66,26 +78,57 @@ void get_pcie_time (struct timespec *time)
                  :"memory");
     time->tv_sec = ret;
     time->tv_nsec = rete;
+    */
 }
 
 void printMsg(int num) {
     struct timespec timePCIE;
     FILE *fp;
+    unsigned char buf[30];  // data buffer
+    time_t timep;
+    struct tm *tmp;
+
     get_pcie_time(&timePCIE);
+    time(&timep);
+    tmp = localtime(&timep);
     rd_num += 1;
-    printf("called pcie_time %ld(s).%09lu(ns), (%d).\n", \
-		 timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+    printf("called pcie_time %09lu(s).%09lu(ns), (%d).\n", \
+				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
     fp = fopen("timer.log", "a");
-    fprintf(fp, "%ld, %09lu, %d\n", \
-		 timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+    fprintf(fp, "%lu, %09lu, %d\n", \
+				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
     fclose(fp);
+    bzero(buf, sizeof(buf));
+    // buffer[0]-buffer[7] is tm->tm_min(int) and tm->sec(int), LE
+    buf[0] = (unsigned char)(tmp->tm_min);
+    buf[1] = (unsigned char)(tmp->tm_min >> 8);
+    buf[2] = (unsigned char)(tmp->tm_min >> 16);
+    buf[3] = (unsigned char)(tmp->tm_min >> 24);
+
+    buf[4] = (unsigned char)(tmp->tm_sec);
+    buf[5] = (unsigned char)(tmp->tm_sec >> 8);
+    buf[6] = (unsigned char)(tmp->tm_sec >> 16);
+    buf[7] = (unsigned char)(tmp->tm_sec >> 24);
+
+    // buffer[8]-buffer[15] is timePCIE.tv_sec(long) and timePCIE.tv_nsec(long), LE
+    buf[8] = (unsigned char)(timePCIE.tv_sec);
+    buf[9] = (unsigned char)(timePCIE.tv_sec >> 8);
+    buf[10] = (unsigned char)(timePCIE.tv_sec >> 16);
+    buf[11] = (unsigned char)(timePCIE.tv_sec >> 24);
+
+    buf[12] = (unsigned char)(timePCIE.tv_nsec);
+    buf[13] = (unsigned char)(timePCIE.tv_nsec >> 8);
+    buf[14] = (unsigned char)(timePCIE.tv_nsec >> 16);
+    buf[15] = (unsigned char)(timePCIE.tv_nsec >> 24);
+   
+  buf[16] = '\0';
+    write(s, buf, sizeof(buf));
 }
 
 void usage(char *file) {
     printf(
            "Usage: [sudo] %s [OPTION]\n\n"
            "-h \t\t show help information.\n"
-           "-f \t\t set the timer excutes immediately
            "-t \t\t set the timer start point.\n"
            "-i \t\t set the timer interval (default 5s)\n"
            "\nExample: sudo %s -t 8:30:0 -i 5.3\n"
@@ -95,12 +138,10 @@ void usage(char *file) {
 int main (int argc,char *argv[])
 {
     // Get system call result to determine successful or failed   
-    int res = 0;
-    int ch;
+    int res = 0;  // return result
+    int ch;  // get char from command line
     unsigned long long utime;
-    long ivtime = DE_IV;
-    // Register printMsg to SIGALRM    
-    signal(SIGALRM, printMsg); 
+    long ivtime = DE_IV;    
     struct timeval tv;
     struct timezone tz;
     struct itimerval tick;     
@@ -110,7 +151,13 @@ int main (int argc,char *argv[])
     struct tm *tmp;
     char *substr;
     int flag = 1;
-
+    char *tcpaddr;
+    int tcpport = PORT;
+    
+    struct sockaddr_in server_addr;	 // server address struct
+    char buffer[1024];
+    // Register printMsg to SIGALRM    
+    signal(SIGALRM, printMsg); 
     time(&timep);
     //printf("time() : %d \n",timep);
     tmp = localtime(&timep);
@@ -120,7 +167,7 @@ int main (int argc,char *argv[])
 
     // read the command line
     if (argc >= 2) {
-        while((ch = getopt(argc, argv, "t:i:hf")) != -1) {
+        while((ch = getopt(argc, argv, "t:i:a:p:hf")) != -1) {
             switch(ch) {
                 case 'h':
                     usage(argv[0]);
@@ -141,9 +188,15 @@ int main (int argc,char *argv[])
                 case 'i':
                     ivtime = (long)(atof(optarg) * 1000000);   
                     break;
+                case 'a':
+                    tcpaddr = optarg;
+                    break;
+                case 'p':
+                    tcpport = atoi(optarg);
+                    break;
                 case 'f':
                     flag = 0;
-                    break;
+                    break; 
                 default:
                     break;
              }
@@ -185,16 +238,35 @@ int main (int argc,char *argv[])
     }
     printf("and the interval is %ld(s).%ld(us)\n", \
         tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
-    //fd = open (PCIE_DEV, O_RDWR);
-    //if (fd == -1) {
-    //    printf ("Please check the PCIE card and try again!\n");
-    //return -1;
-    //}
     
+    fd = open (PCIE_DEV, O_RDWR);
+    if (fd == -1) {
+        printf ("Please check the PCIE card and try again!\n");
+    return -1;
+    }
+    
+    // build tcp socket
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if(s < 0){
+		    printf("socket error\n");
+		    return -1;
+	  }	
+    bzero(&server_addr, sizeof(server_addr));  // set zero
+	  server_addr.sin_family = AF_INET;  // protocal family
+	  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);  // local address
+	  server_addr.sin_port = htons(tcpport);  // server port
+
+    // turn the address string input from user into integer 
+    inet_pton(AF_INET, tcpaddr, &server_addr.sin_addr);
+
+    // connect to server
+    connect(s, (struct sockaddr*)&server_addr, sizeof(struct sockaddr));
+
     // Always sleep to catch SIGALRM signal   
     while(1) {  
         pause();  
-    }  	 
+    }
+    close(s);  	 
     return 0;
 		
 }
