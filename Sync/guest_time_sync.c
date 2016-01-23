@@ -106,7 +106,7 @@ void get_offset(long long int *offset) {
     get_pcie_time(&tmr_time);
     cur_cnt = (unsigned long long)cur_time.tv_sec * 1000000000 + cur_time.tv_nsec;
     tmr_cnt = (unsigned long long)tmr_time.tv_sec * 1000000000 + tmr_time.tv_nsec;
-    // excute time delay
+    // PtpCard design
     tmr_cnt -= TAI_OFFSET;
     if (tmr_cnt > cur_cnt) {
         *offset = (-(tmr_cnt - cur_cnt));

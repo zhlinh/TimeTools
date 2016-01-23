@@ -8,11 +8,15 @@
 !/Sync/**/
 !/Timer/
 !/Timer/**/
+!/Ptpd/
+!/Ptpd/**/
 
 # add files
 !*.cpp
 !*.c
 !*.h
 !Makefile
+!*.sh
+!*.conf
 
 # you can add the special files here to ignore

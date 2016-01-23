@@ -41,5 +41,5 @@ long main (int argc,char *argv[])
 	ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
 	ptime = timePCIE.tv_sec;
 	printf("%ld\n", ptime);
-	return ptime;				
+	return 0;				
 }

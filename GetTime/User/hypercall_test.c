@@ -5,6 +5,8 @@
 #define KVM_HC_GET_PCIE_TIME 100
 #define KVM_HC_GET_SYS_TIME 101
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
+#define NSEC 1000000000
+
 int main()
 {
     printf("Hello HyperCall!\n");
@@ -22,8 +24,8 @@ int main()
     clock_gettime(CLOCK_REALTIME, &time1);
     printf("pcietime: %ld\n", ret);
     printf("pcietime: %ld\n", rete);
-    printf("hypercall takes %ld\n", (time1.tv_sec * 1000000000 \
-            + time1.tv_nsec) - (time0.tv_sec * 1000000000 + time0.tv_nsec));
+    printf("hypercall takes %ld\n", (time1.tv_sec * NSEC \
+            + time1.tv_nsec) - (time0.tv_sec * NSEC + time0.tv_nsec));
 
     ret = 0;
     rete = 0;
@@ -32,6 +34,7 @@ int main()
                  : "a"(nr_s)
                  :"memory");
     printf("hostsystime: %ld\n", ret);
-    printf("hostsystime: %ld\n", rete);    
+    printf("hostsystime: %ld\n", rete);
+    return 0;    
 } 
 
