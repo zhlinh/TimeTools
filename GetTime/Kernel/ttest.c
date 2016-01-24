@@ -22,7 +22,7 @@ struct host_priv
 	unsigned long  m_immrbar_phy_addr;
 	int minor;
 	wait_queue_head_t tsev_wq;
-	
+
 };
 
 int get_pcietime(struct timespec *pcie_time, struct file *filp)
@@ -32,9 +32,9 @@ int get_pcietime(struct timespec *pcie_time, struct file *filp)
   unsigned long long  tmr_cnt;
   u32 nano_value = 0;
   filp = filp_open(PCIE_DEV, O_RDONLY, 0444);
-  if (IS_ERR(filp)) { 
+  if (IS_ERR(filp)) {
     filp = NULL;
-    return -1; 
+    return -1;
   }
 
   priv = (struct host_priv *)filp->private_data;
@@ -45,7 +45,7 @@ int get_pcietime(struct timespec *pcie_time, struct file *filp)
   tmr_cnt |= ((u64)be32_to_cpu (*(u32 *)(priv->m_immrbar + TMR_CNT_H))) << 32;
   if (tmr_cnt){
     pcie_time->tv_sec = div_u64_rem(tmr_cnt,1000000000,&nano_value) - 35 ;
-    pcie_time->tv_nsec = nano_value;	            	          
+    pcie_time->tv_nsec = nano_value;
   }
   filp_close(filp, NULL);
   return 0;

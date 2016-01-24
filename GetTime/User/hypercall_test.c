@@ -16,25 +16,25 @@ int main()
     unsigned  nr_s = KVM_HC_GET_SYS_TIME;
     struct timespec time0, time1;
 
-    clock_gettime(CLOCK_REALTIME, &time0);  
+    clock_gettime(CLOCK_REALTIME, &time0);
     asm volatile(KVM_HYPERCALL
-                 : "=a"(ret),"=b"(rete)
-                 : "a"(nr_p)
-                 :"memory");
+            : "=a"(ret),"=b"(rete)
+            : "a"(nr_p)
+            :"memory");
     clock_gettime(CLOCK_REALTIME, &time1);
     printf("pcietime: %ld\n", ret);
     printf("pcietime: %ld\n", rete);
     printf("hypercall takes %ld\n", (time1.tv_sec * NSEC \
-            + time1.tv_nsec) - (time0.tv_sec * NSEC + time0.tv_nsec));
+                + time1.tv_nsec) - (time0.tv_sec * NSEC + time0.tv_nsec));
 
     ret = 0;
     rete = 0;
     asm volatile(KVM_HYPERCALL
-                 : "=a"(ret),"=b"(rete)
-                 : "a"(nr_s)
-                 :"memory");
+            : "=a"(ret),"=b"(rete)
+            : "a"(nr_s)
+            :"memory");
     printf("hostsystime: %ld\n", ret);
     printf("hostsystime: %ld\n", rete);
-    return 0;    
-} 
+    return 0;
+}
 

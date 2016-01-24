@@ -29,17 +29,17 @@ static int fd;
 
 long main (int argc,char *argv[])
 {
-	
-	long ptime;
-	struct timespec timePCIE;
-	int ret;	
-	fd = open ("/dev/pcie",O_RDWR);
-	if (fd == -1) {
-		printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
-		return -1;
-	}
-	ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
-	ptime = timePCIE.tv_sec;
-	printf("%ld\n", ptime);
-	return 0;				
+
+    long ptime;
+    struct timespec timePCIE;
+    int ret;
+    fd = open ("/dev/pcie",O_RDWR);
+    if (fd == -1) {
+        printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
+        return -1;
+    }
+    ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
+    ptime = timePCIE.tv_sec;
+    printf("%ld\n", ptime);
+    return 0;
 }

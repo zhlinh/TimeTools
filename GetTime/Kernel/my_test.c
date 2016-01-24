@@ -35,7 +35,7 @@
 #define IO_MAGIC '='
 #define HOST_GET_PCIE_TIME _IOR(IO_MAGIC, 1, struct timespec)
 
-#define  BEGIN_KMEM { mm_segment_t  old_fs  =  get_fs();  set_fs(get_ds());  
+#define  BEGIN_KMEM { mm_segment_t  old_fs  =  get_fs();  set_fs(get_ds());
 #define  END_KMEM  set_fs(old_fs); }
 
 #define PCIE_DEV "/dev/pcietime0"
@@ -44,48 +44,48 @@ MODULE_LICENSE("GPL");
 
 int get_time(struct file *filp, struct timespec *time)
 {
-   return filp->f_op->unlocked_ioctl(filp, HOST_GET_PCIE_TIME, time);
+    return filp->f_op->unlocked_ioctl(filp, HOST_GET_PCIE_TIME, time);
 }
 
 int init_module(void)
 {
-  long unsigned int ptime;
-  struct file *filp;
-  struct timespec timePCIE;
-  int error = -ENOTTY;
-  printk("my_test module installing\n");
-  /**
-  fd = open ("/dev/pcie", O_RDWR, 0);
-  
-  if (fd == -1) {
-    printk ("Please check the PCIE card and try again. For Help input: sync -h \n");
-    return -1;
-  }
- 
-  ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
-  */
+    long unsigned int ptime;
+    struct file *filp;
+    struct timespec timePCIE;
+    int error = -ENOTTY;
+    printk("my_test module installing\n");
+    /**
+      fd = open ("/dev/pcie", O_RDWR, 0);
 
-  filp = filp_open(PCIE_DEV, O_RDONLY, 0444);
-  if (IS_ERR(filp)) { 
-    printk("my_test ioctl failed\n");
-    filp = NULL;  
-  } 
-  BEGIN_KMEM;   	
-  //error = filp->f_op->unlocked_ioctl(filp, HOST_GET_PCIE_TIME, &timePCIE);
-  error = get_time(filp, &timePCIE);
-  if (error == -ENOIOCTLCMD){  
-    error = -EINVAL;
-    printk("my_test ioctl failed\n");
-  }
-  //ptime = timePCIE.tv_sec;
-  //printk("my_test %ld\n", ptime);
-  END_KMEM;
-  filp_close(filp, NULL);   	
-  return -1;
+      if (fd == -1) {
+      printk ("Please check the PCIE card and try again. For Help input: sync -h \n");
+      return -1;
+      }
+
+      ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
+      */
+
+    filp = filp_open(PCIE_DEV, O_RDONLY, 0444);
+    if (IS_ERR(filp)) {
+        printk("my_test ioctl failed\n");
+        filp = NULL;
+    }
+    BEGIN_KMEM;
+    //error = filp->f_op->unlocked_ioctl(filp, HOST_GET_PCIE_TIME, &timePCIE);
+    error = get_time(filp, &timePCIE);
+    if (error == -ENOIOCTLCMD){
+        error = -EINVAL;
+        printk("my_test ioctl failed\n");
+    }
+    //ptime = timePCIE.tv_sec;
+    //printk("my_test %ld\n", ptime);
+    END_KMEM;
+    filp_close(filp, NULL);
+    return -1;
 }
 
 void cleanup_module( void )
 {
-  printk("my_test module uninstalling\n");
-  return;
+    printk("my_test module uninstalling\n");
+    return;
 }
