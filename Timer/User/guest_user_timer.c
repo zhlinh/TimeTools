@@ -43,6 +43,8 @@ typedef void (*sighandler_t) (int);
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
+#define LOG_FILE "timer.log"
+
 void get_system_time (struct timespec *time);//Get current system time
 void get_pcie_time (struct timespec *time); // Get the pcie rtc time 
 void printMsg(int);  
@@ -75,7 +77,7 @@ void printMsg(int num) {
     rd_num += 1;
     printf("called pcie_time %ld(s).%09lu(ns), (%d).\n", \
 		 timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
-    fp = fopen("timer.log", "a");
+    fp = fopen(LOG_FILE, "a");
     fprintf(fp, "%ld, %09lu, %d\n", \
 		 timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
     fclose(fp);
@@ -85,7 +87,7 @@ void usage(char *file) {
     printf(
            "Usage: [sudo] %s [OPTION]\n\n"
            "-h \t\t show help information.\n"
-           "-f \t\t set the timer excutes immediately
+           "-f \t\t set the timer excutes immediately.\n"
            "-t \t\t set the timer start point.\n"
            "-i \t\t set the timer interval (default 5s)\n"
            "\nExample: sudo %s -t 8:30:0 -i 5.3\n"
@@ -110,6 +112,7 @@ int main (int argc,char *argv[])
     struct tm *tmp;
     char *substr;
     int flag = 1;
+    FILE *fp;
 
     time(&timep);
     //printf("time() : %d \n",timep);
@@ -180,11 +183,21 @@ int main (int argc,char *argv[])
         printf("my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
             tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+	fp = fopen(LOG_FILE, "a");
+    	fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+            tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+            tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    	fclose(fp);
     } else {
         printf("my_timer will excute immediately(1ms later).\n");
     }
     printf("and the interval is %ld(s).%ld(us)\n", \
-        tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
+        tick.it_interval.tv_sec, tick.it_interval.tv_usec);
+    fp = fopen(LOG_FILE, "a");
+    fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+        tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+        tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    fclose(fp);  
     //fd = open (PCIE_DEV, O_RDWR);
     //if (fd == -1) {
     //    printf ("Please check the PCIE card and try again!\n");
