@@ -184,7 +184,8 @@ int main (int argc,char *argv[])
             tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 	fp = fopen(LOG_FILE, "a");
-    	fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+    	fprintf(fp, "\n==============================================\n", \
+            "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
             tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
     	fclose(fp);
@@ -194,9 +195,9 @@ int main (int argc,char *argv[])
     printf("and the interval is %ld(s).%ld(us)\n", \
         tick.it_interval.tv_sec, tick.it_interval.tv_usec);
     fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
-        tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
-        tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    fprintf(fp, "and the interval is %ld(s).%ld(us)\n", \
+        "==============================================\n"
+        tick.it_interval.tv_sec, tick.it_interval.tv_usec);
     fclose(fp);  
     //fd = open (PCIE_DEV, O_RDWR);
     //if (fd == -1) {
