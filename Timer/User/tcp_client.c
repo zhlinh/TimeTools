@@ -47,6 +47,7 @@ typedef void (*sighandler_t) (int);
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
+#define LOG_FILE "tcp_timer.log"
 #define PORT 8888
 
 typedef unsigned char byte;
@@ -54,7 +55,8 @@ typedef unsigned char byte;
 
 void get_system_time (struct timespec *time);//Get current system time
 void get_pcie_time (struct timespec *time); // Get the pcie rtc time 
-void printMsg(int);  
+void int_to_byte(int, unsigned char *);
+void print_msg(int);  
 
 static int rd_num = 0;
 int s;  // socket descriptor
@@ -81,47 +83,45 @@ void get_pcie_time (struct timespec *time)
     */
 }
 
-void printMsg(int num) {
+void int_to_byte(int i, unsigned char *bytes)
+{
+    int size = 4;
+    memset(bytes, 0, sizeof(unsigned char) * size);
+    bytes[0] = (unsigned char)(0xff & i);
+    bytes[1] = (unsigned char)((0xff00 & i) >> 8);
+    bytes[2] = (unsigned char)((0xff0000 & i) >> 16);
+    bytes[3] = (unsigned char)((0xff000000 & i) >> 24);
+}
+
+void print_msg(int num) {
     struct timespec timePCIE;
     FILE *fp;
-    unsigned char buf[30];  // data buffer
+    unsigned char buf[50];  // data buffer
     time_t timep;
     struct tm *tmp;
 
-    get_pcie_time(&timePCIE);
+    //get_pcie_time(&timePCIE);
+    get_system_time(&timePCIE);
     time(&timep);
     tmp = localtime(&timep);
     rd_num += 1;
     printf("called pcie_time %09lu(s).%09lu(ns), (%d).\n", \
 				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
-    fp = fopen("timer.log", "a");
+    fp = fopen(LOG_FILE, "a");
     fprintf(fp, "%lu, %09lu, %d\n", \
 				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
     fclose(fp);
     bzero(buf, sizeof(buf));
-    // buffer[0]-buffer[7] is tm->tm_min(int) and tm->sec(int), LE
-    buf[0] = (unsigned char)(tmp->tm_min);
-    buf[1] = (unsigned char)(tmp->tm_min >> 8);
-    buf[2] = (unsigned char)(tmp->tm_min >> 16);
-    buf[3] = (unsigned char)(tmp->tm_min >> 24);
+    // buf[0]-buf[11] is hour, min, sec, LE
+    int_to_byte((int)tmp->tm_hour, buf);
+    int_to_byte((int)tmp->tm_min, &buf[4]);
+    int_to_byte((int)tmp->tm_sec, &buf[8]);
 
-    buf[4] = (unsigned char)(tmp->tm_sec);
-    buf[5] = (unsigned char)(tmp->tm_sec >> 8);
-    buf[6] = (unsigned char)(tmp->tm_sec >> 16);
-    buf[7] = (unsigned char)(tmp->tm_sec >> 24);
-
-    // buffer[8]-buffer[15] is timePCIE.tv_sec(long) and timePCIE.tv_nsec(long), LE
-    buf[8] = (unsigned char)(timePCIE.tv_sec);
-    buf[9] = (unsigned char)(timePCIE.tv_sec >> 8);
-    buf[10] = (unsigned char)(timePCIE.tv_sec >> 16);
-    buf[11] = (unsigned char)(timePCIE.tv_sec >> 24);
-
-    buf[12] = (unsigned char)(timePCIE.tv_nsec);
-    buf[13] = (unsigned char)(timePCIE.tv_nsec >> 8);
-    buf[14] = (unsigned char)(timePCIE.tv_nsec >> 16);
-    buf[15] = (unsigned char)(timePCIE.tv_nsec >> 24);
+    // buf[12]-buf[19] is tv_sec and tc_sec, LE
+    int_to_byte((int)timePCIE.tv_sec, &buf[12]);
+    int_to_byte((int)timePCIE.tv_nsec, &buf[16]);   
    
-  buf[16] = '\0';
+    buf[20] = '\0';
     write(s, buf, sizeof(buf));
 }
 
@@ -153,11 +153,12 @@ int main (int argc,char *argv[])
     int flag = 1;
     char *tcpaddr;
     int tcpport = PORT;
+    FILE *fp;
     
     struct sockaddr_in server_addr;	 // server address struct
     char buffer[1024];
-    // Register printMsg to SIGALRM    
-    signal(SIGALRM, printMsg); 
+    // Register print_msg to SIGALRM    
+    signal(SIGALRM, print_msg); 
     time(&timep);
     //printf("time() : %d \n",timep);
     tmp = localtime(&timep);
@@ -233,13 +234,24 @@ int main (int argc,char *argv[])
         printf("my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
             tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+        fp = fopen(LOG_FILE, "a");
+    	  fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+            tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+            tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    	  fclose(fp);
     } else {
         printf("my_timer will excute immediately(1ms later).\n");
     }
     printf("and the interval is %ld(s).%ld(us)\n", \
         tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
     
-    fd = open (PCIE_DEV, O_RDWR);
+    fp = fopen(LOG_FILE, "a");
+    fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
+        tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+        tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    fclose(fp);  
+
+    fd = open(PCIE_DEV, O_RDWR);
     if (fd == -1) {
         printf ("Please check the PCIE card and try again!\n");
     return -1;
@@ -266,7 +278,8 @@ int main (int argc,char *argv[])
     while(1) {  
         pause();  
     }
-    close(s);  	 
+    close(s);
+    close(fd);  	 
     return 0;
 		
 }

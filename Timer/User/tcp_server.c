@@ -8,12 +8,24 @@
 #define PORT 8888			
 #define BACKLOG 10
 
+int bytes_to_int(unsigned char *);
+void process_conn_server(int);
+
+int bytes_to_int(unsigned char *bytes)
+{
+    int num = bytes[0] & 0xff;
+    num |= ((bytes[1] << 8) & 0xff00);
+    num |= ((bytes[2] << 16) & 0xff0000);
+    num |= ((bytes[3] << 24) & 0xff000000);
+    return num;
+}
+
 void process_conn_server(int s)
 {
 	ssize_t size = 0;
-	unsigned char buffer[100];
-  unsigned int min, sec;
-  unsigned int ts_sec, ts_nsec;
+	unsigned char buffer[50];
+  int hour, min, sec;
+  int ts_sec, ts_nsec;
   int count = 0;						
 	for(;;){
     bzero(buffer, sizeof(buffer));								
@@ -23,18 +35,15 @@ void process_conn_server(int s)
 		}
 		
 		//printf("%d bytes altogether\n", (int)size);
-		min = (unsigned int)(buffer[0] | buffer[1] << 8 \
-                 | buffer[2] << 16 | buffer[3] << 24);
-		sec = (unsigned int)(buffer[4] | buffer[5] << 8 \
-                 | buffer[6] << 16 | buffer[7] << 24);
-		
-    ts_sec = (unsigned int)(buffer[8] | buffer[9] << 8 \
-                 | buffer[10] << 16 | buffer[11] << 24);
-              
-		ts_nsec = (unsigned int)(buffer[12] | buffer[13] << 8 \
-                 | buffer[14] << 16 | buffer[15] << 24);
+		hour = bytes_to_int(buffer);
+		min = bytes_to_int(&buffer[4]);		
+    sec = bytes_to_int(&buffer[8]);
+
+    ts_sec = bytes_to_int(&buffer[12]);              
+		ts_nsec = bytes_to_int(&buffer[16]);
                  
-    printf("%u(min):%02u(s): %u(s).%09u(ns) (%d)\n", min, sec, ts_sec, ts_nsec, ++count);    
+    printf("%d:%d:%02d offset is %d(s).%09u(ns), (%d)\n", \
+           hour, min, sec, ts_sec, ts_nsec, ++count);    
 	}	
 }
 
