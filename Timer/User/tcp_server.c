@@ -42,7 +42,7 @@ void process_conn_server(int s)
     ts_sec = bytes_to_int(&buffer[12]);              
 		ts_nsec = bytes_to_int(&buffer[16]);
                  
-    printf("%d:%d:%02d offset is %d(s).%09u(ns), (%d)\n", \
+    printf("%02d:%02d:%02d offset is %d(s).%09u(ns), (%d)\n", \
            hour, min, sec, ts_sec, ts_nsec, ++count);    
 	}	
 }

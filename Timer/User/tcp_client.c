@@ -19,10 +19,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define DE_HOUR 12
-#define DE_MIN 30
-#define DE_SEC 0
-
 // default interval 5s
 #define DE_IV 5000000
 
@@ -52,26 +48,42 @@ typedef void (*sighandler_t) (int);
 
 typedef unsigned char byte;
 
-
+// get_time methods
 void get_system_time (struct timespec *time);//Get current system time
-void get_pcie_time (struct timespec *time); // Get the pcie rtc time 
+void get_io_pcie_time (struct timespec *time); // Get the pcie time from driver directly
+void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hypercall
+
 void int_to_byte(int, unsigned char *);
 void print_msg(int);  
 
 static int rd_num = 0;
 int s;  // socket descriptor
-int fd;  // file descriptor
+int fd = -1;  // file descriptor
+int mode = 0; // define getting what time
+char *mode_name;  // mode name
 
-void get_system_time (struct timespec *time)
+/**
+ *  get system time 
+ */
+void get_system_time(struct timespec *time)
 {
     //ioctl(fd, HOST_GET_LOCAL_SYSTEM_TIME, time);
     clock_gettime(CLOCK_REALTIME, time); 
 }
 
-void get_pcie_time (struct timespec *time) 
+/**
+ *  get pcie time from driver directly
+ */
+void get_io_pcie_time(struct timespec *time) 
 {
     ioctl(fd, HOST_GET_PCIE_TIME, time);
-    /**
+}
+
+/**
+ *  get pcie time from hypercall
+ */ 
+void get_hc_pcie_time(struct timespec *time) 
+{
     unsigned long ret, rete;
     unsigned  nr = KVM_HC_GET_PCIE_TIME;
     asm volatile(KVM_HYPERCALL
@@ -80,7 +92,6 @@ void get_pcie_time (struct timespec *time)
                  :"memory");
     time->tv_sec = ret;
     time->tv_nsec = rete;
-    */
 }
 
 void int_to_byte(int i, unsigned char *bytes)
@@ -100,8 +111,18 @@ void print_msg(int num) {
     time_t timep;
     struct tm *tmp;
 
-    //get_pcie_time(&timePCIE);
-    get_system_time(&timePCIE);
+    // Here is what kind of time you want to get
+    if (mode == 1) {
+        // pcie time from driver directly
+        get_io_pcie_time(&timePCIE);
+    } else if (mode == 2) {
+        // pcie time from hypercall
+        get_hc_pcie_time(&timePCIE);
+    } else {
+        // system time
+        get_system_time(&timePCIE);
+    }
+
     time(&timep);
     tmp = localtime(&timep);
     rd_num += 1;
@@ -129,10 +150,16 @@ void usage(char *file) {
     printf(
            "Usage: [sudo] %s [OPTION]\n\n"
            "-h \t\t show help information.\n"
-           "-t \t\t set the timer start point.\n"
-           "-i \t\t set the timer interval (default 5s)\n"
-           "\nExample: sudo %s -t 8:30:0 -i 5.3\n"
-           , file, file);
+           "-t \t\t set the timer start point.(default next secs(secs%%5==0))\n"
+           "-i \t\t set the timer interval.(default 5s)\n"
+           "-a \t\t set the tcp server address.\n"
+           "-p \t\t set the tcp server port.(default 8888)\n"
+           "-m \t\t set the mode to get time(default 0) :\n"
+           "\t\t\t m : 0 means system time.\n"
+           "\t\t\t m : 1 means pcie time from driver directly.\n"
+           "\t\t\t m : 2 means pcie time from hypercall.\n"
+           "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 1\n", \
+           file, file);
 }
 
 int main (int argc,char *argv[])
@@ -162,13 +189,10 @@ int main (int argc,char *argv[])
     time(&timep);
     //printf("time() : %d \n",timep);
     tmp = localtime(&timep);
-    tmp->tm_hour = DE_HOUR; 
-    tmp->tm_min = DE_MIN;
-    tmp->tm_sec = DE_SEC;
 
     // read the command line
     if (argc >= 2) {
-        while((ch = getopt(argc, argv, "t:i:a:p:hf")) != -1) {
+        while((ch = getopt(argc, argv, "t:i:a:p:m:h")) != -1) {
             switch(ch) {
                 case 'h':
                     usage(argv[0]);
@@ -185,6 +209,7 @@ int main (int argc,char *argv[])
                         usage(argv[0]);
                         return -1;
                     }
+                    flag = 0;
                     break;
                 case 'i':
                     ivtime = (long)(atof(optarg) * 1000000);   
@@ -195,32 +220,47 @@ int main (int argc,char *argv[])
                 case 'p':
                     tcpport = atoi(optarg);
                     break;
-                case 'f':
-                    flag = 0;
-                    break; 
+                case 'm':
+                    mode = atoi(optarg);
+                    if (mode != 0 && mode != 1 && mode != 2) {
+                        usage(argv[0]);
+                        return -1;
+                    }
+                    // define the mode_name
+                    if (mode == 1) {
+                        // pcie time from driver directly
+                        mode_name = "io_pcie_time";
+                    } else if (mode == 2) {
+                        // pcie time from hypercall
+                        mode_name = "hc_pcie_time";
+                    } else {
+                        // system time
+                        mode_name = "system_time";
+                    } 
+                    break;
                 default:
                     break;
              }
          }
     } else {
-        flag = 0;
+        usage(argv[0]);
+        return 0;
     }
     // Interval time to run function  	  
     tick.it_interval.tv_sec = ivtime / 1000000;   // sec. 	  
     tick.it_interval.tv_usec = ivtime % 1000000;  // usec. 
     
     if (flag) {
-        // Timeout to run function first time 
-        timep = mktime(tmp); 
-        gettimeofday (&tv , &tz);
-        utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
-        tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
-        tick.it_value.tv_usec = utime % 1000000; // usec.
-    } else {
-        // excute immediately, set timer 1ms later
-        tick.it_value.tv_sec = 0;  // sec.  	  
-        tick.it_value.tv_usec = 1000; // usec.
-    }  
+        // next secs(secs % 5 == 0)
+        printf("it will start in 5 secs......\n");
+        tmp->tm_sec = tmp->tm_sec - (tmp->tm_sec) % 5 + 5;
+    }
+    // Timeout to run function first time 
+    timep = mktime(tmp); 
+    gettimeofday(&tv, &tz);
+    utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
+    tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
+    tick.it_value.tv_usec = utime % 1000000; // usec.
    	  
     // Set timer, ITIMER_REAL : real-time to decrease timer,  	  
     //                          send SIGALRM when timeout  	  
@@ -230,31 +270,31 @@ int main (int argc,char *argv[])
     }
 
     // print the timer info. 
-    if (flag) {
-        printf("my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
-            tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+    printf("\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
+        mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
+        tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    fp = fopen(LOG_FILE, "a");
+	  fprintf(fp, "\n============================================================\n"
+            "\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
+            mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
-        fp = fopen(LOG_FILE, "a");
-    	  fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
-            tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
-            tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
-    	  fclose(fp);
-    } else {
-        printf("my_timer will excute immediately(1ms later).\n");
-    }
-    printf("and the interval is %ld(s).%ld(us)\n", \
-        tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
+	  fclose(fp);
+
+    printf("\twith interval %ld(s).%ld(us)\n", \
+    tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
     
     fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "my_timer set timer at %02d-%02d-%02d %02d:%02d:%02d\n", \
-        tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
-        tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+    fprintf(fp, "\twith interval %ld(s).%ld(us)\n"
+        "============================================================\n",
+        tick.it_interval.tv_sec, tick.it_interval.tv_usec);
     fclose(fp);  
 
-    fd = open(PCIE_DEV, O_RDWR);
-    if (fd == -1) {
-        printf ("Please check the PCIE card and try again!\n");
-    return -1;
+    if (mode == 1) {
+        fd = open(PCIE_DEV, O_RDWR);
+        if (fd == -1) {
+            printf ("Can not open PCIE card, check and try again!\n");
+            return -1;
+        }
     }
     
     // build tcp socket
@@ -279,7 +319,9 @@ int main (int argc,char *argv[])
         pause();  
     }
     close(s);
-    close(fd);  	 
+    if (mode == 1) {
+        close(fd);
+    }  	 
     return 0;
 		
 }
