@@ -52,7 +52,7 @@ static int rd_num = 0;
 
 int fd = -1; // file descriptor
 int mode = 0; // define getting what time
-char *mode_name;  // mode name
+char *mode_name = "system_time"; // mode name
 
 /**
  *  get system time 
@@ -87,27 +87,27 @@ void get_hc_pcie_time(struct timespec *time)
 }
 
 void printMsg(int num) {
-    struct timespec timePCIE;
+    struct timespec time;
     FILE *fp;
     rd_num += 1;
 
     // Here is what kind of time you want to get
     if (mode == 1) {
         // pcie time from driver directly
-        get_io_pcie_time(&timePCIE);
+        get_io_pcie_time(&time);
     } else if (mode == 2) {
         // pcie time from hypercall
-        get_hc_pcie_time(&timePCIE);
+        get_hc_pcie_time(&time);
     } else {
         // system time
-        get_system_time(&timePCIE);
+        get_system_time(&time);
     }
 
-    printf("called pcie_time %ld(s).%09lu(ns), (%d).\n", \
-		    timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+    printf("called %s %ld(s).%09lu(ns), (%d).\n", \
+		    mode_name, time.tv_sec, time.tv_nsec, rd_num);
     fp = fopen(LOG_FILE, "a");
     fprintf(fp, "%ld, %09lu, %d\n", \
-		    timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+		    time.tv_sec, time.tv_nsec, rd_num);
     fclose(fp);
 }
 

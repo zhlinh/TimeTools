@@ -15,12 +15,10 @@
 #include <getopt.h>
 #include <string.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
 // default interval 5s
 #define DE_IV 5000000
+
+#define NSEC 1000000000
 
 typedef void (*sighandler_t) (int);
 #define ADJ_FREQ_MAX  512000
@@ -43,22 +41,19 @@ typedef void (*sighandler_t) (int);
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
-#define LOG_FILE "tcp_timer.log"
-#define PORT 8888
-
-typedef unsigned char byte;
+#define LOG_FILE "timer.log"
+#define COST_LOG_FILE "cost.log"
 
 // get_time methods
 void get_system_time (struct timespec *time);//Get current system time
 void get_io_pcie_time (struct timespec *time); // Get the pcie time from driver directly
 void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hypercall
 
-void int_to_byte(int, unsigned char *);
-void print_msg(int);  
+void printMsg(int);  
 
 static int rd_num = 0;
-int s;  // socket descriptor
-int fd = -1;  // file descriptor
+
+int fd = -1; // file descriptor
 int mode = 0; // define getting what time
 char *mode_name = "system_time"; // mode name
 
@@ -94,56 +89,42 @@ void get_hc_pcie_time(struct timespec *time)
     time->tv_nsec = rete;
 }
 
-void int_to_byte(int i, unsigned char *bytes)
-{
-    int size = 4;
-    memset(bytes, 0, sizeof(unsigned char) * size);
-    bytes[0] = (unsigned char)(0xff & i);
-    bytes[1] = (unsigned char)((0xff00 & i) >> 8);
-    bytes[2] = (unsigned char)((0xff0000 & i) >> 16);
-    bytes[3] = (unsigned char)((0xff000000 & i) >> 24);
-}
-
-void print_msg(int num) {
-    struct timespec timePCIE;
+void printMsg(int num) {
+    struct timespec time;
+    struct timespec time_start, time_end;
+    long int cost;
     FILE *fp;
-    unsigned char buf[50];  // data buffer
-    time_t timep;
-    struct tm *tmp;
+    rd_num += 1;
 
+    clock_gettime(CLOCK_REALTIME, &time_start);
     // Here is what kind of time you want to get
     if (mode == 1) {
         // pcie time from driver directly
-        get_io_pcie_time(&timePCIE);
+        get_io_pcie_time(&time);
     } else if (mode == 2) {
         // pcie time from hypercall
-        get_hc_pcie_time(&timePCIE);
+        get_hc_pcie_time(&time);
     } else {
         // system time
-        get_system_time(&timePCIE);
+        get_system_time(&time);
     }
-
-    time(&timep);
-    tmp = localtime(&timep);
-    rd_num += 1;
-    printf("called pcie_time %09lu(s).%09lu(ns), (%d).\n", \
-				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+    clock_gettime(CLOCK_REALTIME, &time_end);
+    
+    cost = (time_end.tv_sec * NSEC + time_end.tv_nsec) \
+                - (time_start.tv_sec * NSEC + time_start.tv_nsec);
+    printf("====hypercall costs %ld(ns)\n", cost);
     fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "%lu, %09lu, %d\n", \
-				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
+    printf("====hypercall costs %ld(ns)\n", cost);
     fclose(fp);
-    bzero(buf, sizeof(buf));
-    // buf[0]-buf[11] is hour, min, sec, LE
-    int_to_byte((int)tmp->tm_hour, buf);
-    int_to_byte((int)tmp->tm_min, &buf[4]);
-    int_to_byte((int)tmp->tm_sec, &buf[8]);
-
-    // buf[12]-buf[19] is tv_sec and tc_sec, LE
-    int_to_byte((int)timePCIE.tv_sec, &buf[12]);
-    int_to_byte((int)timePCIE.tv_nsec, &buf[16]);   
-   
-    buf[20] = '\0';
-    write(s, buf, sizeof(buf));
+    
+    /**
+    printf("called pcie_time %ld(s).%09lu(ns), (%d).\n", \
+		    time.tv_sec, time.tv_nsec, rd_num);
+    fp = fopen(LOG_FILE, "a");
+    fprintf(fp, "%ld, %09lu, %d\n", \
+		    time.tv_sec, time.tv_nsec, rd_num);
+    fclose(fp);
+    */
 }
 
 void usage(char *file) {
@@ -152,23 +133,23 @@ void usage(char *file) {
            "-h \t\t show help information.\n"
            "-t \t\t set the timer start point.(default next secs(secs%%5==0))\n"
            "-i \t\t set the timer interval.(default 5s)\n"
-           "-a \t\t set the tcp server address.\n"
-           "-p \t\t set the tcp server port.(default 8888)\n"
            "-m \t\t set the mode to get time(default 0) :\n"
            "\t\t\t m : 0 means system time.\n"
            "\t\t\t m : 1 means pcie time from driver directly.\n"
            "\t\t\t m : 2 means pcie time from hypercall.\n"
-           "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 1\n", \
+           "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 2\n", \
            file, file);
 }
 
 int main (int argc,char *argv[])
 {
     // Get system call result to determine successful or failed   
-    int res = 0;  // return result
-    int ch;  // get char from command line
+    int res = 0;
+    int ch;
     unsigned long long utime;
-    long ivtime = DE_IV;    
+    long ivtime = DE_IV;
+    // Register printMsg to SIGALRM    
+    signal(SIGALRM, printMsg); 
     struct timeval tv;
     struct timezone tz;
     struct itimerval tick;     
@@ -178,21 +159,15 @@ int main (int argc,char *argv[])
     struct tm *tmp;
     char *substr;
     int flag = 1;
-    char *tcpaddr;
-    int tcpport = PORT;
     FILE *fp;
-    
-    struct sockaddr_in server_addr;	 // server address struct
-    char buffer[1024];
-    // Register print_msg to SIGALRM    
-    signal(SIGALRM, print_msg); 
+
     time(&timep);
     //printf("time() : %d \n",timep);
     tmp = localtime(&timep);
 
     // read the command line
     if (argc >= 2) {
-        while((ch = getopt(argc, argv, "t:i:a:p:m:h")) != -1) {
+        while((ch = getopt(argc, argv, "t:i:m:h")) != -1) {
             switch(ch) {
                 case 'h':
                     usage(argv[0]);
@@ -214,14 +189,8 @@ int main (int argc,char *argv[])
                 case 'i':
                     ivtime = (long)(atof(optarg) * 1000000);   
                     break;
-                case 'a':
-                    tcpaddr = optarg;
-                    break;
-                case 'p':
-                    tcpport = atoi(optarg);
-                    break;
                 case 'm':
-                    mode = atoi(optarg);
+                    mode = atoi(optarg);                   
                     if (mode != 0 && mode != 1 && mode != 2) {
                         usage(argv[0]);
                         return -1;
@@ -237,30 +206,28 @@ int main (int argc,char *argv[])
                         // system time
                         mode_name = "system_time";
                     } 
-                    break;
                 default:
                     break;
              }
          }
-    } else {
-        usage(argv[0]);
-        return 0;
     }
+
     // Interval time to run function  	  
     tick.it_interval.tv_sec = ivtime / 1000000;   // sec. 	  
     tick.it_interval.tv_usec = ivtime % 1000000;  // usec. 
-    
+
     if (flag) {
         // next secs(secs % 5 == 0)
         printf("it will start in 5 secs......\n");
         tmp->tm_sec = tmp->tm_sec - (tmp->tm_sec) % 5 + 5;
-    }
+    }    
+
     // Timeout to run function first time 
     timep = mktime(tmp); 
-    gettimeofday(&tv, &tz);
+    gettimeofday (&tv , &tz);
     utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
     tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
-    tick.it_value.tv_usec = utime % 1000000; // usec.
+    tick.it_value.tv_usec = utime % 1000000; // usec. 
    	  
     // Set timer, ITIMER_REAL : real-time to decrease timer,  	  
     //                          send SIGALRM when timeout  	  
@@ -273,9 +240,9 @@ int main (int argc,char *argv[])
     printf("\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
         mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
         tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
-    fp = fopen(LOG_FILE, "a");
-	  fprintf(fp, "\n============================================================\n"
-            "\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
+    fp = fopen(COST_LOG_FILE, "a");
+	fprintf(fp, "\n============================================================\n"
+            "\tset timer to get COST of %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
             mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 	  fclose(fp);
@@ -283,12 +250,12 @@ int main (int argc,char *argv[])
     printf("\twith interval %ld(s).%ld(us)\n", \
     tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
     
-    fp = fopen(LOG_FILE, "a");
+    fp = fopen(COST_LOG_FILE, "a");
     fprintf(fp, "\twith interval %ld(s).%ld(us)\n"
         "============================================================\n",
         tick.it_interval.tv_sec, tick.it_interval.tv_usec);
-    fclose(fp);  
-
+    fclose(fp); 
+  
     if (mode == 1) {
         fd = open(PCIE_DEV, O_RDWR);
         if (fd == -1) {
@@ -297,32 +264,13 @@ int main (int argc,char *argv[])
         }
     }
     
-    // build tcp socket
-    s = socket(AF_INET, SOCK_STREAM, 0);
-    if(s < 0){
-		    printf("socket error\n");
-		    return -1;
-	  }	
-    bzero(&server_addr, sizeof(server_addr));  // set zero
-	  server_addr.sin_family = AF_INET;  // protocal family
-	  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);  // local address
-	  server_addr.sin_port = htons(tcpport);  // server port
-
-    // turn the address string input from user into integer 
-    inet_pton(AF_INET, tcpaddr, &server_addr.sin_addr);
-
-    // connect to server
-    connect(s, (struct sockaddr*)&server_addr, sizeof(struct sockaddr));
-
     // Always sleep to catch SIGALRM signal   
     while(1) {  
         pause();  
     }
-    close(s);
     if (mode == 1) {
         close(fd);
-    }  	 
+    } 	 
     return 0;
 		
 }
-
