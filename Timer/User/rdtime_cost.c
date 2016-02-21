@@ -112,9 +112,9 @@ void printMsg(int num) {
     
     cost = (time_end.tv_sec * NSEC + time_end.tv_nsec) \
                 - (time_start.tv_sec * NSEC + time_start.tv_nsec);
-    printf("====hypercall costs %ld(ns)\n", cost);
+    printf("(%d): ====hypercall costs %ld(ns).\n", rd_num, cost);
     fp = fopen(LOG_FILE, "a");
-    printf("====hypercall costs %ld(ns)\n", cost);
+    fprintf(fp, "%d, %ld\n", rd_num, cost);
     fclose(fp);
     
     /**
