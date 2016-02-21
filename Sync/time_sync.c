@@ -1,3 +1,7 @@
+/**
+ * This program is to sync pcie_time and system_time by driver directly.
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>

@@ -1,3 +1,7 @@
+/**
+ * This program is to sync pcie_time and system_time by hypercall 
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>
@@ -87,6 +91,7 @@ void get_time(struct timespec *time)
 // CHANGED: add get_pcie_time
 void get_pcie_time(struct timespec *time)
 {
+    //ioctl(fd, HOST_GET_PCIE_TIME, &time);
     unsigned long ret, rete;
     unsigned  nr = KVM_HC_GET_PCIE_TIME;
 

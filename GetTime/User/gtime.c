@@ -1,3 +1,8 @@
+/**
+ * This program is to read HyperCallTime(just for test).
+ * HyperCallTime: pcie ptp-card time from hypercall
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>

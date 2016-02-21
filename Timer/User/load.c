@@ -1,3 +1,7 @@
+/**
+ * This program is to add CPU load.  
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>

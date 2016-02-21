@@ -16,7 +16,7 @@
  * $ sudo insmod hrtimer_test.ko
  * $ dmesg | grep my_hrtimer
  * $ sudo rmmod hrtimer_test [To Remove Module]
- */
+*/
 
 #include <linux/kernel.h>
 #include <linux/module.h>

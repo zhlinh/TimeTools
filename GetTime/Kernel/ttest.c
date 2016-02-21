@@ -1,3 +1,12 @@
+/**
+ * This file is to get pcie ptp-card time from driver directly.
+ * USAGE:
+ * $ make
+ * $ sudo insmod ttest.ko
+ * $ dmesg | grep ttest
+ * $ sudo rmmod ttest [To Remove Module]
+*/
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>

@@ -1,3 +1,8 @@
+/**
+ * This program is to read IOTime.
+ * IOTime: pcie ptp-card time from driver directly
+*/
+
 #include <stdio.h>
 #include <time.h>
 #include <linux/kvm_para.h>

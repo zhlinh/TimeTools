@@ -1,3 +1,8 @@
+/**
+ * This program is to read IOTime.
+ * IOTime: pcie ptp-card time from driver directly
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>
@@ -17,12 +22,12 @@
 #define MY_MIN 55 
 #define MY_SEC 0
 
-#define ADJ_FREQ_MAX  512000
+#define ADJ_FREQ_MAX 512000
 
-#define OFFSET_1980     315532800
-#define OFFSET_1990 	631152000
-#define OFFSET_2000  	946684800
-#define OFFSET_2010		1262304000
+#define OFFSET_1980 315532800
+#define OFFSET_1990 631152000
+#define OFFSET_2000 946684800
+#define OFFSET_2010	1262304000
 
 #define IO_MAGIC '='
 //IOCTL
@@ -48,7 +53,7 @@ void get_system_time (struct timespec *time)
 
 void get_pcie_time (struct timespec *time) 
 {
-	ioctl (fd, HOST_GET_PCIE_TIME, time);
+	ioctl(fd, HOST_GET_PCIE_TIME, time);
 }
 
 void printMsg(int num) {
@@ -61,16 +66,16 @@ void printMsg(int num) {
 int main (int argc,char *argv[])
 {
 	  // Get system call result to determine successful or failed   
-          int res = 0;
-          unsigned long long utime;
-  	  // Register printMsg to SIGALRM    
-  	  signal(SIGALRM, printMsg); 
-          struct timeval tv;
+    int res = 0;
+    unsigned long long utime;
+  	// Register printMsg to SIGALRM    
+  	signal(SIGALRM, printMsg); 
+    struct timeval tv;
 	  struct timezone tz;       
-  	  struct itimerval tick;     
-  	  // Initialize struct  	  
+  	struct itimerval tick;     
+  	// Initialize struct  	  
 	  memset(&tick, 0, sizeof(tick));
-          time_t timep;
+    time_t timep;
 	  struct tm *tmp;
 	  time(&timep);
 	  //printf("time() : %d \n",timep);

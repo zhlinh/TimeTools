@@ -1,3 +1,7 @@
+/**
+ * This program is to count the cost of reading time(SystemTime, IOTime, HyperCallTime). 
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>
@@ -113,7 +117,7 @@ void printMsg(int num) {
     cost = (time_end.tv_sec * NSEC + time_end.tv_nsec) \
                 - (time_start.tv_sec * NSEC + time_start.tv_nsec);
     printf("(%d): ====hypercall costs %ld(ns).\n", rd_num, cost);
-    fp = fopen(LOG_FILE, "a");
+    fp = fopen(COST_LOG_FILE, "a");
     fprintf(fp, "%d, %ld\n", rd_num, cost);
     fclose(fp);
     

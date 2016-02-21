@@ -1,3 +1,7 @@
+/**
+ * This program is to receive info from tcp client. 
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

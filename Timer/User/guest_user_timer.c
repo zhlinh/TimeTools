@@ -1,3 +1,10 @@
+/**
+ * This program is to read time(SystemTime, IOTime, HyperCallTime).
+ * SystemTime: system time
+ * IOTime: pcie ptp-card time from driver directly
+ * HyperCallTime: pcie ptp-card time from hypercall
+*/
+
 #include <sys/timex.h>
 #include <sys/fcntl.h>
 #include <sys/mman.h>
