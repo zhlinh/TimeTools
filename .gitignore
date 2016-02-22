@@ -10,6 +10,8 @@
 !/Timer/**/
 !/Ptpd/
 !/Ptpd/**/
+!/Driver/
+!/Driver/**/
 
 # add files
 !*.cpp
@@ -18,5 +20,6 @@
 !Makefile
 !*.sh
 !*.conf
+!*.md
 
 # you can add the special files here to ignore
