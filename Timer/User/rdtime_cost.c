@@ -1,5 +1,8 @@
 /**
  * This program is to count the cost of reading time(SystemTime, IOTime, HyperCallTime). 
+ * 
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt
 */
 
 #include <sys/timex.h>

@@ -3,6 +3,9 @@
  * SystemTime: system time
  * IOTime: pcie ptp-card time from driver directly
  * HyperCallTime: pcie ptp-card time from hypercall
+ * 
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt
 */
 
 #include <sys/timex.h>
@@ -24,6 +27,9 @@
 
 // default interval 5s
 #define DE_IV 5000000
+
+// define ns
+#define NSEC 1000000000
 
 typedef void (*sighandler_t) (int);
 #define ADJ_FREQ_MAX  512000
@@ -52,6 +58,9 @@ typedef void (*sighandler_t) (int);
 void get_system_time (struct timespec *time);//Get current system time
 void get_io_pcie_time (struct timespec *time); // Get the pcie time from driver directly
 void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hypercall
+
+static void normalize_time(struct timespec *result);
+static void sub_ns(struct timespec *result, struct timespec *x, long y);
 
 void printMsg(int);  
 
@@ -93,32 +102,77 @@ void get_hc_pcie_time(struct timespec *time)
     time->tv_nsec = rete;
 }
 
-void printMsg(int num) {
-    struct timespec time;
-    FILE *fp;
-    rd_num += 1;
+static void normalize_time(struct timespec *result)
+{
+    result->tv_sec += result->tv_nsec / NSEC;
+    result->tv_nsec -= result->tv_nsec / NSEC * NSEC;
 
+    if (result->tv_sec > 0 && result->tv_nsec < 0) {
+        result->tv_sec -= 1;
+        result->tv_nsec += NSEC;
+    } else if(result->tv_sec < 0 && result->tv_nsec > 0) {
+        result->tv_sec += 1;
+        result->tv_nsec -= NSEC;
+    }
+}
+
+static void sub_ns(struct timespec *result, struct timespec *x, long y)
+{
+    result->tv_sec = x->tv_sec;
+    result->tv_nsec = x->tv_nsec - y;
+    normalize_time(result);
+}
+
+void printMsg(int num) 
+{
+    struct timespec systime;
+    struct timespec time;
+    struct timespec fixedtime;
+    FILE *fp;
+    
     // Here is what kind of time you want to get
     if (mode == 1) {
+        // FIXED: systime.tv_nsec means the delay time from the appointment time.
+        get_system_time(&systime);
         // pcie time from driver directly
         get_io_pcie_time(&time);
     } else if (mode == 2) {
+        // FIXED: systime.tv_nsec means the delay time from the appointment time.
+        get_system_time(&systime);
         // pcie time from hypercall
         get_hc_pcie_time(&time);
     } else {
-        // system time
+        // system time, system time doesn't need fix
         get_system_time(&time);
     }
-
-    printf("called %s %ld(s).%09lu(ns), (%d).\n", \
-		    mode_name, time.tv_sec, time.tv_nsec, rd_num);
-    fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "%ld, %09lu, %d\n", \
-		    time.tv_sec, time.tv_nsec, rd_num);
-    fclose(fp);
+    
+    rd_num += 1;
+    if (mode == 1 || mode == 2) {
+        // sub delay time    
+        sub_ns(&fixedtime, &time, systime.tv_nsec);
+        printf("\n====SYSTEM TIME: %ld(s).%09lu(ns|delay from appointment), (%d).\n", \
+		        systime.tv_sec, systime.tv_nsec, rd_num);
+        printf("called %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, time.tv_sec, time.tv_nsec, rd_num);
+        printf("called fixed %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, fixedtime.tv_sec, fixedtime.tv_nsec, rd_num);
+        fp = fopen(LOG_FILE, "a");
+        fprintf(fp, "%ld, %09lu, %d\n", \
+		        fixedtime.tv_sec, fixedtime.tv_nsec, rd_num);
+        fclose(fp);
+    } else {
+        //system time doesn't need fix
+        printf("called %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, time.tv_sec, time.tv_nsec, rd_num);
+        fp = fopen(LOG_FILE, "a");
+        fprintf(fp, "%ld, %09lu, %d\n", \
+		        time.tv_sec, time.tv_nsec, rd_num);
+        fclose(fp);
+    }
 }
 
-void usage(char *file) {
+void usage(char *file) 
+{
     printf(
            "Usage: [sudo] %s [OPTION]\n\n"
            "-h \t\t show help information.\n"
@@ -215,7 +269,7 @@ int main (int argc,char *argv[])
 
     // Timeout to run function first time 
     timep = mktime(tmp); 
-    gettimeofday (&tv , &tz);
+    gettimeofday(&tv, &tz);
     utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
     tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
     tick.it_value.tv_usec = utime % 1000000; // usec. 
@@ -232,7 +286,7 @@ int main (int argc,char *argv[])
         mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
         tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
     fp = fopen(LOG_FILE, "a");
-	fprintf(fp, "\n============================================================\n"
+    fprintf(fp, "\n============================================================\n"
             "\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
             mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);

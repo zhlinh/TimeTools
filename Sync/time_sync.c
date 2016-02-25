@@ -1,5 +1,8 @@
 /**
  * This program is to sync pcie_time and system_time by driver directly.
+ *
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt
 */
 
 #include <sys/timex.h>

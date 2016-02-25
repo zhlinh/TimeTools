@@ -1,5 +1,12 @@
 /**
- * This program is to add CPU load.  
+ * This program is to add CPU load.
+ * 
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt
+ *
+ * if you want to assign CPU:
+ * sudo taskset -c [cpu list, like 0, 1, 2...] ./load
+ *  
 */
 
 #include <sys/timex.h>

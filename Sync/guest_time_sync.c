@@ -1,5 +1,8 @@
 /**
- * This program is to sync pcie_time and system_time by hypercall 
+ * This program is to sync pcie_time and system_time by hypercall
+ * 
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt
 */
 
 #include <sys/timex.h>

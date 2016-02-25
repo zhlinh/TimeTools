@@ -3,7 +3,10 @@
  * and transmit it through TCP. 
  * SystemTime: system time
  * IOTime: pcie ptp-card time from driver directly
- * HyperCallTime: pcie ptp-card time from hypercall 
+ * HyperCallTime: pcie ptp-card time from hypercall
+ *
+ * USAGE:
+ * gcc -o [filename] [filename].c -lrt 
 */
 
 #include <sys/timex.h>
@@ -29,6 +32,9 @@
 
 // default interval 5s
 #define DE_IV 5000000
+
+// define ns
+#define NSEC 1000000000
 
 typedef void (*sighandler_t) (int);
 #define ADJ_FREQ_MAX  512000
@@ -60,6 +66,9 @@ typedef unsigned char byte;
 void get_system_time (struct timespec *time);//Get current system time
 void get_io_pcie_time (struct timespec *time); // Get the pcie time from driver directly
 void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hypercall
+
+static void normalize_time(struct timespec *result);
+static void sub_ns(struct timespec *result, struct timespec *x, long y);
 
 void int_to_byte(int, unsigned char *);
 void print_msg(int);  
@@ -102,6 +111,27 @@ void get_hc_pcie_time(struct timespec *time)
     time->tv_nsec = rete;
 }
 
+static void normalize_time(struct timespec *result)
+{
+    result->tv_sec += result->tv_nsec / NSEC;
+    result->tv_nsec -= result->tv_nsec / NSEC * NSEC;
+
+    if (result->tv_sec > 0 && result->tv_nsec < 0) {
+        result->tv_sec -= 1;
+        result->tv_nsec += NSEC;
+    } else if(result->tv_sec < 0 && result->tv_nsec > 0) {
+        result->tv_sec += 1;
+        result->tv_nsec -= NSEC;
+    }
+}
+
+static void sub_ns(struct timespec *result, struct timespec *x, long y)
+{
+    result->tv_sec = x->tv_sec;
+    result->tv_nsec = x->tv_nsec - y;
+    normalize_time(result);
+}
+
 void int_to_byte(int i, unsigned char *bytes)
 {
     int size = 4;
@@ -113,42 +143,66 @@ void int_to_byte(int i, unsigned char *bytes)
 }
 
 void print_msg(int num) {
-    struct timespec timePCIE;
+    struct timespec systime;
+    struct timespec time;
+    struct timespec fixedtime;
     FILE *fp;
     unsigned char buf[50];  // data buffer
-    time_t timep;
+    //time_t timep;
     struct tm *tmp;
 
     // Here is what kind of time you want to get
     if (mode == 1) {
+        // FIXED: systime.tv_nsec means the delay time from the appointment time.
+        get_system_time(&systime);
         // pcie time from driver directly
-        get_io_pcie_time(&timePCIE);
+        get_io_pcie_time(&time);
     } else if (mode == 2) {
+        // FIXED: systime.tv_nsec means the delay time from the appointment time.
+        get_system_time(&systime);
         // pcie time from hypercall
-        get_hc_pcie_time(&timePCIE);
+        get_hc_pcie_time(&time);
     } else {
-        // system time
-        get_system_time(&timePCIE);
+        // system time, system time doesn't need fix
+        get_system_time(&time);
+    }
+    
+   rd_num += 1;
+    if (mode == 1 || mode == 2) {
+        // sub delay time    
+        sub_ns(&fixedtime, &time, systime.tv_nsec);
+        printf("\n====SYSTEM TIME: %ld(s).%09lu(ns|delay from appointment), (%d).\n", \
+		        systime.tv_sec, systime.tv_nsec, rd_num);
+        printf("called %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, time.tv_sec, time.tv_nsec, rd_num);
+        printf("called fixed %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, fixedtime.tv_sec, fixedtime.tv_nsec, rd_num);
+        fp = fopen(LOG_FILE, "a");
+        fprintf(fp, "%ld, %09lu, %d\n", \
+		        fixedtime.tv_sec, fixedtime.tv_nsec, rd_num);
+        fclose(fp);
+        // buf[12]-buf[19] is tv_sec and tc_sec, LE
+        int_to_byte((int)fixedtime.tv_sec, &buf[12]);
+        int_to_byte((int)fixedtime.tv_nsec, &buf[16]);   
+    } else {
+        //system time doesn't need fix
+        printf("called %s %ld(s).%09lu(ns), (%d).\n", \
+		        mode_name, time.tv_sec, time.tv_nsec, rd_num);
+        fp = fopen(LOG_FILE, "a");
+        fprintf(fp, "%ld, %09lu, %d\n", \
+		        time.tv_sec, time.tv_nsec, rd_num);
+        fclose(fp);
+        // buf[12]-buf[19] is tv_sec and tc_sec, LE
+        int_to_byte((int)time.tv_sec, &buf[12]);
+        int_to_byte((int)time.tv_nsec, &buf[16]);   
     }
 
-    time(&timep);
-    tmp = localtime(&timep);
-    rd_num += 1;
-    printf("called pcie_time %09lu(s).%09lu(ns), (%d).\n", \
-				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
-    fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "%lu, %09lu, %d\n", \
-				timePCIE.tv_sec, timePCIE.tv_nsec, rd_num);
-    fclose(fp);
+    tmp = localtime(&systime.tv_sec);
     bzero(buf, sizeof(buf));
     // buf[0]-buf[11] is hour, min, sec, LE
     int_to_byte((int)tmp->tm_hour, buf);
     int_to_byte((int)tmp->tm_min, &buf[4]);
     int_to_byte((int)tmp->tm_sec, &buf[8]);
-
-    // buf[12]-buf[19] is tv_sec and tc_sec, LE
-    int_to_byte((int)timePCIE.tv_sec, &buf[12]);
-    int_to_byte((int)timePCIE.tv_nsec, &buf[16]);   
    
     buf[20] = '\0';
     write(s, buf, sizeof(buf));
