@@ -218,17 +218,17 @@ int main (int argc,char *argv[])
                     return 0;
                 case 'd':
                     if(already_running(LOCKFILE)) {
-                        printf ("Sync Process has already running. \
-                                Use: %s -t to display\n", argv[0]);
+                        printf ("Sync Process has already running.\n"
+                                "Use: %s -t to display\n", argv[0]);
                         return;
                     }
                     if(sync_period >= 10000) {
-                        printf ("----------Sync process Successfull, \
-                                sync period is %d ms\n", sync_period /1000);
+                        printf ("----------Sync process Successfull,\n"
+                                "sync period is %d ms\n", sync_period /1000);
                     } else {
-                        printf ("----------Sync process failed, \
-                                sync period %d is too short, \
-                                please try again!!\n", sync_period);
+                        printf ("----------Sync process failed,\n"
+                                "sync period %d is too short,\n"
+                                "please try again!!\n", sync_period);
                     }
                     if (daemon (0,0) < 0) {
                         perror ("Failed to be a daemon.");
@@ -245,11 +245,11 @@ int main (int argc,char *argv[])
                     if(argv[2]!= NULL) {
                         sync_period = atoi(argv[2]);
                         if(sync_period >= 10000) {
-                            printf ("Set period ok, \
-                                    sync period is %d ms\n", sync_period / 1000);
+                            printf ("Set period ok,\n"
+                                    "sync period is %d ms\n", sync_period / 1000);
                         } else {
-                            printf ("Set sync period failed, \
-                                    Please check sync period[need > 10ms]! \n");
+                            printf ("Set sync period failed,\n"
+                                    "Please check sync period[need > 10ms]! \n");
                             return -1;
                         }
                     } else {
@@ -281,14 +281,14 @@ int main (int argc,char *argv[])
 
     fd = open (PCIE_DEV, O_RDWR);
     if (fd == -1) {
-        printf ("Please check the PCIE card and try again. \
-                For Help input: sync -h \n");
+        printf ("Please check the PCIE card and try again.\n"
+                "For Help input: sync -h \n");
         return -1;
     }
 
     if (!displayPCIETime && already_running(LOCKFILE)) {
-        printf ("Sync Process has already been started. \
-                Use: sync -h  to display \n");
+        printf ("Sync Process has already been started.\n"
+                "Use: sync -h  to display \n");
         return 0;
     }
 
@@ -299,8 +299,8 @@ int main (int argc,char *argv[])
             if(displayPCIETime && already_running(LOCKFILE)) {
                 offset_from_PCIE.tv_sec = offset / NSEC;
                 offset_from_PCIE.tv_nsec = offset % NSEC;
-                printf ("----------Syncing process is running, \
-                        offset is  %ld (ns) per %d (ms)\n",
+                printf ("----------Syncing process is running, "
+                        "offset is  %ld (ns) per %d (ms)\n",
                         offset_from_PCIE.tv_nsec, sync_period / 1000);
             } else {
                 offset_from_PCIE.tv_sec = offset / NSEC;
@@ -314,8 +314,8 @@ int main (int argc,char *argv[])
                 {
                     update_clock (&offset_from_PCIE);
                     if(displayResult)
-                        printf ("----------Sync Success, Current Offset \
-                                is %ld (ns)\n", offset_from_PCIE.tv_nsec);
+                        printf ("----------Sync Success, Current Offset "
+                                "is %ld (ns)\n", offset_from_PCIE.tv_nsec);
                 }
             }
         }

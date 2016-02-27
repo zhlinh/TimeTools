@@ -32,7 +32,7 @@ void printMsg(int num) {
     int i, b;
     int a = 16;
     
-    printf ("coutting stars......%d times per second.\n", CTIMES);
+    //printf ("coutting stars......%d times per second.\n", CTIMES);
     for(i = 0; i < CTIMES; i++) {
         b = a * a;
     }
@@ -40,29 +40,30 @@ void printMsg(int num) {
 
 int main (int argc,char *argv[])
 {
-	// Get system call result to determine successful or failed   
+    // Get system call result to determine successful or failed
     int res = 0;
-  	// Register printMsg to SIGALRM    
-  	signal(SIGALRM, printMsg);       
-    struct itimerval tick;     
-  	// Initialize struct  	  
-	memset(&tick, 0, sizeof(tick));
+    // Register printMsg to SIGALRM
+    signal(SIGALRM, printMsg);
+    struct itimerval tick;
+    // Initialize struct
+    memset(&tick, 0, sizeof(tick));
 
-	// Timeout to run function first time  	  
-	tick.it_value.tv_sec = 0;  // sec  	  
-	tick.it_value.tv_usec = 1000; // micro sec.  	  
-	// Interval time to run function  	  
-	tick.it_interval.tv_sec = 1;  	  
-    tick.it_interval.tv_usec = 0;  	  
-    // Set timer, ITIMER_REAL : real-time to decrease timer,  	  
-    //                          send SIGALRM when timeout  	  
-    res = setitimer(ITIMER_REAL, &tick, NULL);  	  
-    if (res) {  	  
-        printf("Set timer failed!!/n");  	  
-    }   
-    // Always sleep to catch SIGALRM signal   
-    while(1) {  
-        pause();  
+    // Timeout to run function first time
+    tick.it_value.tv_sec = 0;  // sec
+    tick.it_value.tv_usec = 1000; // micro sec.
+    // Interval time to run function
+    tick.it_interval.tv_sec = 1;
+    tick.it_interval.tv_usec = 0;
+    // Set timer, ITIMER_REAL : real-time to decrease timer,
+    //                          send SIGALRM when timeout
+    res = setitimer(ITIMER_REAL, &tick, NULL);
+    if (res) {
+        printf("Set timer failed!!/n");
+    }
+    printf ("coutting stars......%d times per second.\n", CTIMES);
+    // Always sleep to catch SIGALRM signal
+    while(1) {
+        pause();
     }
     return 0;
 
