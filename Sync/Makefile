@@ -1,12 +1,12 @@
-HC_SYNC = guest_time_sync
-IO_SYNC = time_sync
+GUEST_HC_SYNC = guest_sync
+HOST_IO_SYNC = host_sync
 
 all:
-	gcc $(HC_SYNC).c -o  $(HC_SYNC) -lrt
-	gcc $(IO_SYNC).c -o  $(IO_SYNC) -lrt
+	gcc $(GUEST_HC_SYNC).c -o  $(GUEST_HC_SYNC) -lrt
+	gcc $(HOST_IO_SYNC).c -o  $(HOST_IO_SYNC) -lrt
 
 clean:
-	rm -rf $(HC_SYNC) $(IO_SYNC)
+	rm -rf $(GUEST_HC_SYNC) $(HOST_IO_SYNC)
 
 .PHONY: all clean
 
