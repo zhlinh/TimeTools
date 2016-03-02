@@ -1,17 +1,18 @@
 #!/bin/sh
 
-# Usage: sudo sh [filename]
-# It will sync using ptpd2 software
+# Usage: sudo sh [filename] [interface]
+# It will sync using ptpd2 software.
+# Ptpd2 will work on master mode.
 
 etc_dir="/etc"
-target="ptpd2-slave.conf"
+target="ptpd2-master.conf"
 fmode="664"
 interface="eth0"
 
 if [ $1 ]; then
 	interface=$1
 else
-	echo "Install failed.You didn't assign the interface."
+	echo "Install failed. You didn't assign the interface."
 	echo "Usage: sudo sh $0 [interface]"
   echo "--Example: sudo sh $0 eth0\n"
   exit

@@ -83,12 +83,12 @@ int already_running(const char *filename)
 }
 
 
-void get_time (struct timespec *time)
+void get_time(struct timespec *time)
 {
     ioctl(fd, HOST_GET_LOCAL_SYSTEM_TIME, time);
 }
 
-int set_time (struct timespec *time)
+int set_time(struct timespec *time)
 {
     return clock_settime(CLOCK_REALTIME,time);
 }
@@ -124,7 +124,7 @@ static void sub_time(struct timespec *result, struct timespec *x, struct timespe
     normalize_time(result);
 }
 
-static int adj_freq (int adj)
+static int adj_freq(int adj)
 {
     struct timex t;
 
@@ -135,7 +135,7 @@ static int adj_freq (int adj)
     return adjtimex(&t);
 }
 
-void update_clock (struct timespec *offset)
+void update_clock(struct timespec *offset)
 {
     int adj = 0;
     static int ap = 2;
@@ -186,13 +186,13 @@ void update_clock (struct timespec *offset)
     //         offset->tv_sec,offset->tv_nsec,observed_drift,adj);
 }
 
-int main (int argc,char *argv[])
+int main(int argc,char *argv[])
 {
 
     long long offset;
-    struct timespec timeSystem;
+    //struct timespec timeSystem;
+    //struct timespec timePCIE;    
     struct timespec timeTemp;
-    struct timespec timePCIE;
     struct timespec offset_from_PCIE;
     int ret;
     int displayResult = 0;
@@ -218,20 +218,20 @@ int main (int argc,char *argv[])
                     return 0;
                 case 'd':
                     if(already_running(LOCKFILE)) {
-                        printf ("Sync Process has already running.\n"
+                        printf("Sync Process has already running.\n"
                                 "Use: %s -t to display\n", argv[0]);
                         return;
                     }
                     if(sync_period >= 10000) {
-                        printf ("----------Sync process Successfully,\n"
+                        printf("----------Sync process Successfully,\n"
                                 "sync period is %d ms\n", sync_period /1000);
                     } else {
-                        printf ("----------Sync process failed,\n"
+                        printf("----------Sync process failed,\n"
                                 "sync period %d is too short,\n"
                                 "please try again!!\n", sync_period);
                     }
-                    if (daemon (0,0) < 0) {
-                        perror ("Failed to be a daemon.");
+                    if (daemon(0,0) < 0) {
+                        perror("Failed to be a daemon.");
                         return -1;
                     }
                     break;
@@ -245,15 +245,15 @@ int main (int argc,char *argv[])
                     if(argv[2]!= NULL) {
                         sync_period = atoi(argv[2]);
                         if(sync_period >= 10000) {
-                            printf ("Set period ok,\n"
+                            printf("Set period ok,\n"
                                     "sync period is %d ms\n", sync_period / 1000);
                         } else {
-                            printf ("Set sync period failed,\n"
+                            printf("Set sync period failed,\n"
                                     "Please check sync period[need > 10ms]! \n");
                             return -1;
                         }
                     } else {
-                        printf ("Set sync period failed, \
+                        printf("Set sync period failed, \
                                 please check sync period[need > 10ms]! \n");
                         return -1;
                     }
@@ -279,7 +279,7 @@ int main (int argc,char *argv[])
         return -1;
     }
 
-    fd = open (PCIE_DEV, O_RDWR);
+    fd = open(PCIE_DEV, O_RDWR);
     if (fd == -1) {
         printf ("Please check the PCIE card and try again.\n"
                 "For Help input: sync -h \n");
@@ -293,8 +293,8 @@ int main (int argc,char *argv[])
     }
 
     while (1) {
-        get_time (&timeSystem);
-        ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
+        //get_time (&timeSystem);
+        //ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
         if (ioctl(fd, HOST_GET_OFFSET, &offset) >= 0) {
             if(displayPCIETime && already_running(LOCKFILE)) {
                 offset_from_PCIE.tv_sec = offset / NSEC;
@@ -321,7 +321,7 @@ int main (int argc,char *argv[])
         }
         //It need set the sync period > 10 ms
         if(sync_period >= 10000) {
-            usleep (sync_period);
+            usleep(sync_period);
         } else {
             break;
         }

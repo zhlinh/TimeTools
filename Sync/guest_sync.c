@@ -227,10 +227,10 @@ void update_clock (struct timespec *offset)
 int main (int argc,char *argv[])
 {
 
-    long long offset;
-    struct timespec timeSystem;
+    long long int offset;
+    //struct timespec timeSystem;
     struct timespec timeTemp;
-    struct timespec timePCIE;
+    //struct timespec timePCIE;
     struct timespec offset_from_PCIE;
     int ret;
     int displayResult = 0;
@@ -331,8 +331,8 @@ int main (int argc,char *argv[])
     }
 
     while (1) {
-        get_time (&timeSystem);
-        get_pcie_time(&timePCIE);
+        //get_time (&timeSystem);
+        //get_pcie_time(&timePCIE);
         get_offset(&offset);
         if(displayPCIETime && already_running(LOCKFILE)) {
             offset_from_PCIE.tv_sec = offset / NSEC;
