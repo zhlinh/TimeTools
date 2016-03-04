@@ -12,6 +12,7 @@
 #include <linux/ioctl.h>
 
 #define ADJ_FREQ_MAX  512000
+#define PCIE_DEV "pcietime0"
 
 #define OFFSET_1980     315532800
 #define OFFSET_1990 	631152000
@@ -48,7 +49,7 @@ int main (int argc,char *argv[])
 	  struct timespec timeSystem;
 	  struct timespec timePCIE;
 	  int ret;  
-	  fd = open ("/dev/pcie",O_RDWR);
+	  fd = open (PCIE_DEV,O_RDWR);
 	  if (fd == -1) {
 		printf ("Please check the PCIE card and try again!\n");
 		return -1;

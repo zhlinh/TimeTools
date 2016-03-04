@@ -12,6 +12,8 @@
 #include <linux/ioctl.h>
 
 #define ADJ_FREQ_MAX  512000
+#define PCIE_DEV "pcietime0"
+
 #define MASTER_TIMETRACEABLE_STATUS	0x08000000   //GPIO4代表timeTraceable标志位
 #define GPIO_DATA_ADDRESS_OFFSET 0xc08
 
@@ -287,7 +289,7 @@ int main (int argc,char *argv[])
 	
 	}
 		
-	 fd = open ("/dev/pcie",O_RDWR);
+	 fd = open (PCIE_DEV,O_RDWR);
 	 if (fd == -1) {
 		printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
 		return -1;
