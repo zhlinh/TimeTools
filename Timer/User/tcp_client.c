@@ -132,7 +132,7 @@ static void sub_ns(struct timespec *result, struct timespec *x, long y)
     normalize_time(result);
 }
 
-void int_to_byte(int i, unsigned char *bytes)
+void int32_to_byte(unsigned int i, unsigned char *bytes)
 {
     int size = 4;
     memset(bytes, 0, sizeof(unsigned char) * size);
@@ -140,6 +140,20 @@ void int_to_byte(int i, unsigned char *bytes)
     bytes[1] = (unsigned char)((0xff00 & i) >> 8);
     bytes[2] = (unsigned char)((0xff0000 & i) >> 16);
     bytes[3] = (unsigned char)((0xff000000 & i) >> 24);
+}
+
+void int64_to_byte(long long i, unsigned char *bytes)
+{
+    int size = 8;
+    memset(bytes, 0, sizeof(unsigned char) * size);
+    bytes[0] = (unsigned char)(0xff & i);
+    bytes[1] = (unsigned char)((0xff00 & i) >> 8);
+    bytes[2] = (unsigned char)((0xff0000 & i) >> 16);
+    bytes[3] = (unsigned char)((0xff000000 & i) >> 24);
+    bytes[4] = (unsigned char)((0xff00000000 & i) >> 32);
+    bytes[5] = (unsigned char)((0xff0000000000 & i) >> 40);
+    bytes[6] = (unsigned char)((0xff000000000000 & i) >> 48);
+    bytes[7] = (unsigned char)((0xff00000000000000 & i) >> 56);
 }
 
 void print_msg(int num) {
@@ -165,9 +179,11 @@ void print_msg(int num) {
     } else {
         // system time, system time doesn't need fix
         get_system_time(&time);
+        systime = time;
     }
     
-   rd_num += 1;
+    rd_num += 1;
+    bzero(buf, sizeof(buf));
     if (mode == 1 || mode == 2) {
         // sub delay time    
         sub_ns(&fixedtime, &time, systime.tv_nsec);
@@ -181,9 +197,9 @@ void print_msg(int num) {
         fprintf(fp, "%ld, %09lu, %d\n", \
 		        fixedtime.tv_sec, fixedtime.tv_nsec, rd_num);
         fclose(fp);
-        // buf[12]-buf[19] is tv_sec and tc_sec, LE
-        int_to_byte((int)fixedtime.tv_sec, &buf[12]);
-        int_to_byte((int)fixedtime.tv_nsec, &buf[16]);   
+        // buf[12]-buf[19] is tv_sec and buf[20] - buf[23] is tc_sec, LE
+        int64_to_byte((long long)fixedtime.tv_sec, &buf[12]);
+        int32_to_byte((unsigned int)fixedtime.tv_nsec, &buf[20]);   
     } else {
         //system time doesn't need fix
         printf("called %s %ld(s).%09lu(ns), (%d).\n", \
@@ -192,19 +208,18 @@ void print_msg(int num) {
         fprintf(fp, "%ld, %09lu, %d\n", \
 		        time.tv_sec, time.tv_nsec, rd_num);
         fclose(fp);
-        // buf[12]-buf[19] is tv_sec and tc_sec, LE
-        int_to_byte((int)time.tv_sec, &buf[12]);
-        int_to_byte((int)time.tv_nsec, &buf[16]);   
+        // buf[12]-buf[19] is tv_sec and buf[20] - buf[23] is tc_sec, LE
+        int64_to_byte((long long)time.tv_sec, &buf[12]);
+        int32_to_byte((unsigned int)time.tv_nsec, &buf[20]);   
     }
 
     tmp = localtime(&systime.tv_sec);
-    bzero(buf, sizeof(buf));
     // buf[0]-buf[11] is hour, min, sec, LE
-    int_to_byte((int)tmp->tm_hour, buf);
-    int_to_byte((int)tmp->tm_min, &buf[4]);
-    int_to_byte((int)tmp->tm_sec, &buf[8]);
+    int32_to_byte((unsigned int)tmp->tm_hour, buf);
+    int32_to_byte((unsigned int)tmp->tm_min, &buf[4]);
+    int32_to_byte((unsigned int)tmp->tm_sec, &buf[8]);
    
-    buf[20] = '\0';
+    buf[24] = '\0';
     write(s, buf, sizeof(buf));
 }
 
@@ -230,10 +245,10 @@ int main (int argc,char *argv[])
     int res = 0;  // return result
     int ch;  // get char from command line
     unsigned long long utime;
-    long ivtime = DE_IV;    
+    long ivtime = DE_IV;
     struct timeval tv;
     struct timezone tz;
-    struct itimerval tick;     
+    struct itimerval tick;    
     // Initialize struct  	  
     memset(&tick, 0, sizeof(tick));
     time_t timep;

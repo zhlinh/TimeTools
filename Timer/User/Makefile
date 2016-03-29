@@ -1,4 +1,4 @@
-MAIN_TIMER = guest_user_timer
+MAIN_TIMER = main_user_timer
 POSIX_TIMER = posix_timer
 LOAD = load
 RDTIME_COST = rdtime_cost

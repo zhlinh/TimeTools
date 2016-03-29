@@ -16,6 +16,7 @@
 # add files
 !*.cpp
 !*.c
+*.mod.c
 !*.h
 !Makefile
 !*.sh

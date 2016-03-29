@@ -48,6 +48,7 @@ typedef void (*sighandler_t) (int);
 #define HOST_GET_LOCAL_SYSTEM_TIME _IOR(IO_MAGIC,2,struct timespec)
 
 #define KVM_HC_GET_PCIE_TIME 100
+#define KVM_HC_DO_NOTHING 98
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
@@ -57,7 +58,7 @@ typedef void (*sighandler_t) (int);
 // get_time methods
 void get_system_time (struct timespec *time);//Get current system time
 void get_io_pcie_time (struct timespec *time); // Get the pcie time from driver directly
-void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hypercall
+void get_hc_pcie_time(struct timespec *time, int hc_num); // Get the pcie time from hypercall
 
 void printMsg(int);  
 
@@ -87,10 +88,10 @@ void get_io_pcie_time(struct timespec *time)
 /**
  *  get pcie time from hypercall
  */ 
-void get_hc_pcie_time(struct timespec *time) 
+void get_hc_pcie_time(struct timespec *time, int hc_num) 
 {
     unsigned long ret, rete;
-    unsigned  nr = KVM_HC_GET_PCIE_TIME;
+    unsigned  nr = hc_num;
     asm volatile(KVM_HYPERCALL
                  : "=a"(ret),"=b"(rete)
                  : "a"(nr)
@@ -113,7 +114,10 @@ void printMsg(int num) {
         get_io_pcie_time(&time);
     } else if (mode == 2) {
         // pcie time from hypercall
-        get_hc_pcie_time(&time);
+        get_hc_pcie_time(&time, KVM_HC_GET_PCIE_TIME);
+    } else if (mode == 3) {
+        // hypercall but do nothing
+        get_hc_pcie_time(&time, KVM_HC_DO_NOTHING);
     } else {
         // system time
         get_system_time(&time);
@@ -147,6 +151,7 @@ void usage(char *file) {
            "\t\t\t m : 0 means system time.\n"
            "\t\t\t m : 1 means pcie time from driver directly.\n"
            "\t\t\t m : 2 means pcie time from hypercall.\n"
+           "\t\t\t m : 3 means hypercall but do nothing.\n"
            "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 2\n", \
            file, file);
 }
@@ -201,7 +206,7 @@ int main (int argc,char *argv[])
                     break;
                 case 'm':
                     mode = atoi(optarg);                   
-                    if (mode != 0 && mode != 1 && mode != 2) {
+                    if (mode > 3 || mode < 0) {
                         usage(argv[0]);
                         return -1;
                     }
@@ -212,6 +217,9 @@ int main (int argc,char *argv[])
                     } else if (mode == 2) {
                         // pcie time from hypercall
                         mode_name = "hc_pcie_time";
+                    } else if (mode == 3) {
+                        // hypercall but do nothing
+                        mode_name = "hc_do_nothing";
                     } else {
                         // system time
                         mode_name = "system_time";

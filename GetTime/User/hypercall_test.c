@@ -1,6 +1,6 @@
 /**
- * This program is to read IOTime.
- * IOTime: pcie ptp-card time from driver directly
+ * This program is to read HyperCallTime(just for test).
+ * HyperCallTime: pcie ptp-card time from hypercall
 */
 
 #include <stdio.h>

@@ -149,6 +149,7 @@ void printMsg(int signo)
     } else {
         // system time, system time doesn't need fix
         get_system_time(&time);
+        systime = time;
     }
     
     rd_num += 1;
