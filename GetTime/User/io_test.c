@@ -35,7 +35,7 @@ static int fd;
 long main (int argc,char *argv[])
 {
 
-    long ptime;
+    long time_s, time_ns;
     struct timespec timePCIE;
     int ret;
     fd = open ("/dev/pcie",O_RDWR);
@@ -44,7 +44,8 @@ long main (int argc,char *argv[])
         return -1;
     }
     ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
-    ptime = timePCIE.tv_sec;
-    printf("%ld\n", ptime);
+    time_s = timePCIE.tv_sec;
+    time_ns = timePCIE.tv_nsec;
+    printf("%ld(s), %09lu(ns)\n", time_s, time_ns);
     return 0;
 }

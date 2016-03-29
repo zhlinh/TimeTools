@@ -235,7 +235,7 @@ void usage(char *file) {
            "\t\t\t m : 0 means system time.\n"
            "\t\t\t m : 1 means pcie time from driver directly.\n"
            "\t\t\t m : 2 means pcie time from hypercall.\n"
-           "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 1\n", \
+           "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 2 -a 192.168.1.153 -p 8885\n", \
            file, file);
 }
 

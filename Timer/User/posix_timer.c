@@ -54,7 +54,7 @@ typedef void (*sighandler_t) (int);
 #define KVM_HYPERCALL ".byte 0x0f,0x01,0xc1"
 #define PCIE_DEV "/dev/pcietime0"
 
-#define LOG_FILE "timer.log"
+#define LOG_FILE "posix-timer.log"
 
 // get_time methods
 void get_system_time (struct timespec *time);//Get current system time

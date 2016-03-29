@@ -6,4 +6,9 @@
 HOST_IO_SYNC=host_sync
 
 gcc ${HOST_IO_SYNC}.c -o  ${HOST_IO_SYNC} -lrt
-./${HOST_IO_SYNC} -d
+
+if [ $1 ]; then
+    ./${HOST_IO_SYNC} -d -s $1
+else
+    ./${HOST_IO_SYNC} -d
+fi

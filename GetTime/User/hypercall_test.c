@@ -27,8 +27,8 @@ int main()
             : "a"(nr_p)
             :"memory");
     clock_gettime(CLOCK_REALTIME, &time1);
-    printf("pcietime: %ld\n", ret);
-    printf("pcietime: %ld\n", rete);
+    printf("pcietime: %ld(s)\n", ret);
+    printf("pcietime: %ld(ns)\n", rete);
     printf("hypercall takes %ld\n", (time1.tv_sec * NSEC \
                 + time1.tv_nsec) - (time0.tv_sec * NSEC + time0.tv_nsec));
 
@@ -38,8 +38,8 @@ int main()
             : "=a"(ret),"=b"(rete)
             : "a"(nr_s)
             :"memory");
-    printf("hostsystime: %ld\n", ret);
-    printf("hostsystime: %ld\n", rete);
+    printf("hostsystime: %ld(n)\n", ret);
+    printf("hostsystime: %ld(ns)\n", rete);
     return 0;
 }
 

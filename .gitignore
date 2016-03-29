@@ -10,6 +10,7 @@
 !/Timer/**/
 !/Ptpd/
 !/Ptpd/**/
+/Ptpd/ptpd-2.3.1
 !/Driver/
 !/Driver/**/
 

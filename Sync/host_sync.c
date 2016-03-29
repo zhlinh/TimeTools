@@ -273,7 +273,7 @@ int main(int argc,char *argv[])
                 "\n"
                 "-v	\t\t\t display sync result\n"
                 "\n"
-                "-s	\t\t\t set sync period\n"
+                "-s	\t\t\t set sync period(us)\n"
                 "\n"
                 , argv[0]);
         return -1;
