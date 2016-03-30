@@ -21,5 +21,5 @@ mknod /dev/${device} c $major 0
 chmod $mode /dev/${device}
 
 # if you don't need sync, you can comment the following two lines.
-#gcc time_sync.c -o sync -lrt
-#./sync -d
+#gcc -o time_sync time_sync.c -lrt
+#./time_sync -d

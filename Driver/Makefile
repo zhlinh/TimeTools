@@ -9,7 +9,7 @@ PWD := $(shell pwd)
 
 #CC=/home/lemon/freescale-2010.09/bin/powerpc-linux-gnu-gcc
 CC    = gcc
-PROGRAM = PCIETimeSync
+PROGRAM = time_sync
 
 
 obj-m := pcie_host_device.o
@@ -23,7 +23,7 @@ modules:
 #	cp pcie_host_device.ko $(INSTALLDIR)
 
 sync:
-	gcc Time_sync.c -o  $(PROGRAM) -lrt
+	gcc time_sync.c -o  $(PROGRAM) -lrt
 	
 clean:
 	rm -rf *.o  Module.*  modules.*  *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions $(PROGRAM)
