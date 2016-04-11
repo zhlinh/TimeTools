@@ -23,4 +23,4 @@ cp -af ./${target} ${etc_dir}/ptpd2.conf
 
 sed -ig "s/interface=eth0/interface=${interface}/" ${etc_dir}/ptpd2.conf
 
-ptpd2 -c /etc/ptpd2.conf
+ptpd2 -c ${etc_dir}/ptpd2.conf
