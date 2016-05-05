@@ -1,26 +1,28 @@
 # Sync/
 
-基于PTP板卡的硬件同步方式。
+基于PTP板卡(Keywie KW-800)的硬件同步方式。
 
 > 环境准备
 
-gcc编译环境
+gcc编译环境。
 
 > 安装和使用
 
 0. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
 
-        sudo -i
+        sudo su root
 
-1. 如果是在Host中，那就需要用IO的方式获取板卡时间。运行：
+1. cd到本目录下。
+
+2. 如果是在Host中，那就需要用IO的方式获取板卡时间。运行：
 
         sh host-install.sh
 
-1. 如果是在Guest中，那就需要用Hypercall的方式获取板卡时间，运行：
+2. 如果是在Guest中，那就需要用Hypercall的方式获取板卡时间，运行：
 
         sh guest-install.sh
 
-2. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
+3. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
 
         sh uninstall.sh
 
