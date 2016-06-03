@@ -18,4 +18,8 @@ PTP 1588虚拟机同步系统的相关时间工具集，使用的PTP板卡为Key
 
 GNU/Linux 3.13.0, gcc 4.8.4
 
-2016-03-30
+zhlinh
+
+Email: zhlinhng@gmail.com
+
+2016-06-03

@@ -311,7 +311,7 @@ int main(int argc,char *argv[])
         mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
         tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
     fp = fopen(LOG_FILE, "a");
-    fprintf(fp, "\n============================================================\n"
+    fprintf(fp, "\n====================================================================\n"
             "\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
             mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
             tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
@@ -322,7 +322,8 @@ int main(int argc,char *argv[])
     
     fp = fopen(LOG_FILE, "a");
     fprintf(fp, "\twith interval %ld(s).%ld(ns)\n"
-        "============================================================\n",
+	"\tTIME FORMAT: seconds(from 1970-01-01), nanoseconds, ordinal\n"
+        "====================================================================\n",
         its.it_interval.tv_sec, its.it_interval.tv_nsec);
     fclose(fp); 
   

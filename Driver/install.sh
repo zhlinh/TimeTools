@@ -20,6 +20,8 @@ echo device major is $major
 mknod /dev/${device} c $major 0
 chmod $mode /dev/${device}
 
-# if you don't need sync, you can comment the following two lines.
+# if you need sync, you can uncomment the last two lines
+# before this script is excuted.
+
 #gcc -o time_sync time_sync.c -lrt
 #./time_sync -d

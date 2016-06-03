@@ -24,7 +24,7 @@
 #include <signal.h>   // for signal()   
 #include <sys/time.h> // struct itimeral
 
-#define CTIMES 230000000  // cpu-load 40% -- 50%
+#define CTIMES 230000000  // cpu-load: 40% to 50%
 
 void printMsg(int);  
 
@@ -66,7 +66,6 @@ int main (int argc,char *argv[])
         pause();
     }
     return 0;
-
 }
 
 

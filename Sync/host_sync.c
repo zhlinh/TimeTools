@@ -153,14 +153,18 @@ void update_clock(struct timespec *offset)
         struct timespec timeTmpE;
         struct timespec timeTmpF;
 
-        get_time (&timeTmpA);   // Get current time #1
-        get_time (&timeTmpB);   // Get current time #2
-        sub_time (&timeTmpC, &timeTmpB, &timeTmpA);
-        get_time (&timeTmpD);   // Get current time #4
-        sub_time (&timeTmpE, &timeTmpD, offset);
-        add_time (&timeTmpF, &timeTmpE, &timeTmpC);
-        set_time (&timeTmpF);
-        //printf ("-------------timeTmpF %d.%d\n",timeTmpF.tv_sec,timeTmpF.tv_nsec);
+        get_time(&timeTmpA);   // Get current time #1
+        get_time(&timeTmpB);   // Get current time #2
+        /* Get the gap time #3 between two statements */
+        sub_time(&timeTmpC, &timeTmpB, &timeTmpA);
+        get_time(&timeTmpD);   // Get current time #4 and base on this time
+        /* 1st sub the offset */
+        sub_time(&timeTmpE, &timeTmpD, offset);
+        /* 2nd add the gap time between two statements */
+        add_time(&timeTmpF, &timeTmpE, &timeTmpC);
+        /* Update the system time */
+        set_time(&timeTmpF);
+        //printf("-------------timeTmpF %d.%d\n",timeTmpF.tv_sec,timeTmpF.tv_nsec);
     } else {
         /*
          * Offset from master is less than one second.  Use the the PI controller
@@ -180,9 +184,9 @@ void update_clock(struct timespec *offset)
         }
         adj = offset->tv_nsec / ap + observed_drift;
         /* apply controller output as a clock tick rate adjustment */
-        adj_freq (-adj);
+        adj_freq(-adj);
     }
-    //printf ("offset %d.%d observed_drift %d adj %d\n",
+    //printf("offset %d.%d observed_drift %d adj %d\n",
     //         offset->tv_sec,offset->tv_nsec,observed_drift,adj);
 }
 
@@ -310,10 +314,9 @@ int main(int argc,char *argv[])
                 //	if(displayResult)
                 //		printf ("----------The Master clock has not been ready!\
                 //		        Please wait or Use sync -h to try again. \n");
-                //}else
-                {
+                //}else { .. }
                     update_clock (&offset_from_PCIE);
-                    if(displayResult)
+                    if(displayResult) {
                         printf ("----------Sync Success, Current Offset "
                                 "is %ld (ns)\n", offset_from_PCIE.tv_nsec);
                 }
@@ -326,4 +329,5 @@ int main(int argc,char *argv[])
             break;
         }
     }
+    
 }

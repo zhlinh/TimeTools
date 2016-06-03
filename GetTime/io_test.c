@@ -38,12 +38,13 @@ long main (int argc,char *argv[])
     long time_s, time_ns;
     struct timespec timePCIE;
     int ret;
-    fd = open ("/dev/pcie",O_RDWR);
+    /* change the device name if PTP-Card device node name changes */
+    fd = open("/dev/pcietime0", O_RDWR);
     if (fd == -1) {
-        printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
+        printf ("Please check the PCIE card and try again.\n");
         return -1;
     }
-    ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
+    ioctl(fd, HOST_GET_PCIE_TIME, &timePCIE);
     time_s = timePCIE.tv_sec;
     time_ns = timePCIE.tv_nsec;
     printf("%ld(s), %09lu(ns)\n", time_s, time_ns);
