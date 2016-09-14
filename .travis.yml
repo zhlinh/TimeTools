@@ -1,0 +1,7 @@
+dist: precise
+before_install:
+    - sudo apt-get update -qq
+script:
+    - sudo make
+group: stable
+os: linux

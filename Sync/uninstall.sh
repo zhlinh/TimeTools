@@ -13,3 +13,4 @@ killall ${HOST_HC_SYNC}
 hwclock --hctosys
 
 echo "Remove ptp card sync successfully."
+

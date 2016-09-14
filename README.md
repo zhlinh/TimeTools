@@ -1,6 +1,10 @@
 # TimeTools
 
+[![Build Status](https://travis-ci.org/zhlinh/TimeTools.svg?branch=master)](https://travis-ci.org/zhlinh/TimeTools)
+
 PTP 1588虚拟机同步系统的相关时间工具集，使用的PTP板卡为Keywie KW-800。
+
+---
 
 > 目录
 
@@ -22,4 +26,4 @@ zhlinh
 
 Email: zhlinhng@gmail.com
 
-2016-06-03
+2016-09-14

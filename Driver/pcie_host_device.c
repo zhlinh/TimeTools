@@ -19,7 +19,7 @@
 #include <linux/spinlock.h>
 //#include <asm-generic/uaccess.h>
 /* The different version linux kernel has different include head file name */
-//#include <asm/uaccess.h> 
+//#include <asm/uaccess.h>
 /* Linux version 2.6.27.19-5-default (geeko@buildhost) (gcc version 4.3.2 [gcc-4_3-branch revision 141291] (SUSE Linux)) */
 /* uaccess.h  at Linux version 2.6.27.19-5 is #include <asm/uaccess.h> */
 
@@ -32,7 +32,7 @@
 //#endif
 
 #define	DEBUG
-#ifdef DEBUG 
+#ifdef DEBUG
 	#define DPRINTK(fmt, args...)   printk(KERN_ERR "%s: " fmt, __FUNCTION__ , ##args)
 #else
 	#define DPRINTK(fmt, args...)
@@ -48,7 +48,7 @@
 #define	GET_NS_TIME		_IOR (MAGIC,1,struct timespec)
 #define GPIO_DATA_ADDRESS_OFFSET 0xc08
 /*
- * 35 Seconds decrese is a default setting of the PTP-Card. 
+ * 35 Seconds decrese is a default setting of the PTP-Card.
  * So you can get the exact time.
  */
 #define TAI_OFFSET	35000000000
@@ -64,7 +64,7 @@
 /* CHANGED: add PTP-Card device Node */
 #define PCIE_NOD "pcietime"
 
-struct base_addr_reg 
+struct base_addr_reg
 {
         uint32_t start;
         uint32_t end;
@@ -104,7 +104,7 @@ struct host_priv
 	unsigned long m_immrbar_phy_addr;
 	int minor;
 	wait_queue_head_t tsev_wq;
-	
+
 };
 
 struct class *ptp_pci_class;
@@ -503,7 +503,7 @@ static int host_resume(struct pci_dev *pdev)
 	return 0;
 }
 
-static struct pci_driver pcie_host_device = 
+static struct pci_driver pcie_host_device =
 {
 	.name		= HOST_NAME,
 	.id_table	= pci_cdev_id_table,
@@ -538,9 +538,9 @@ static int  host_module_init(void)
 	dev = MKDEV(PTP_PCI_MAJOR, 0);
 	retval = register_chrdev_region(dev, MAX_PTP_PCI, HOST_NAME);
 	//DPRINTK("3 retval = %d \n", retval);
-	if (retval < 0) {	
+	if (retval < 0) {
 		printk (KERN_ERR "keywie Register_chrdev_region failed---host_module_init---Error in 15\n");
-		goto fail; 
+		goto fail;
 	}
 
 	cdev_init(&cdev_host, &host_fops);

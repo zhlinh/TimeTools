@@ -1,12 +1,12 @@
 /**
  * This program is to add CPU load.
- * 
+ *
  * USAGE:
  * gcc -o [filename] [filename].c -lrt
  *
  * if you want to assign CPU:
  * sudo taskset -c [cpu list, like 0, 1, 2...] ./load
- *  
+ *
 */
 
 #include <sys/timex.h>
@@ -20,23 +20,23 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <linux/ioctl.h> 
-#include <signal.h>   // for signal()   
+#include <linux/ioctl.h>
+#include <signal.h>   // for signal()
 #include <sys/time.h> // struct itimeral
 
 #define CTIMES 230000000  // cpu-load: 40% to 50%
 
-void printMsg(int);  
+void printMsg(int);
 
 void printMsg(int num) {
     int i, b;
     int a = 16;
-    
+
     //printf ("coutting stars......%d times per second.\n", CTIMES);
     for(i = 0; i < CTIMES; i++) {
         b = a * a;
     }
-}  
+}
 
 int main (int argc,char *argv[])
 {
@@ -67,5 +67,4 @@ int main (int argc,char *argv[])
     }
     return 0;
 }
-
 

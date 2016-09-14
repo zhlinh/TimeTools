@@ -3,7 +3,7 @@
  * SystemTime: system time
  * IOTime: pcie ptp-card time from driver directly(ioctl)
  * HyperCallTime: pcie ptp-card time from hypercall
- * 
+ *
  * USAGE:
  * gcc -o [filename] [filename].c -lrt
 */
@@ -19,8 +19,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <linux/ioctl.h> 
-#include <signal.h>   // for signal()   
+#include <linux/ioctl.h>
+#include <signal.h>   // for signal()
 #include <sys/time.h> // struct itimeral. setitimer()
 #include <getopt.h>
 #include <string.h>
@@ -62,7 +62,7 @@ void get_hc_pcie_time (struct timespec *time); // Get the pcie time from hyperca
 static void normalize_time(struct timespec *result);
 static void sub_ns(struct timespec *result, struct timespec *x, long y);
 
-void printMsg(int);  
+void printMsg(int);
 
 static int rd_num = 0;
 
@@ -71,26 +71,26 @@ int mode = 0; // define getting what time
 char *mode_name = "system_time"; // mode name
 
 /**
- *  get system time 
+ *  get system time
  */
 void get_system_time(struct timespec *time)
 {
     //ioctl(fd, HOST_GET_LOCAL_SYSTEM_TIME, time);
-    clock_gettime(CLOCK_REALTIME, time); 
+    clock_gettime(CLOCK_REALTIME, time);
 }
 
 /**
  *  get pcie time from driver directly
  */
-void get_io_pcie_time(struct timespec *time) 
+void get_io_pcie_time(struct timespec *time)
 {
     ioctl(fd, HOST_GET_PCIE_TIME, time);
 }
 
 /**
  *  get pcie time from hypercall
- */ 
-void get_hc_pcie_time(struct timespec *time) 
+ */
+void get_hc_pcie_time(struct timespec *time)
 {
     unsigned long ret, rete;
     unsigned  nr = KVM_HC_GET_PCIE_TIME;
@@ -123,13 +123,13 @@ static void sub_ns(struct timespec *result, struct timespec *x, long y)
     normalize_time(result);
 }
 
-void printMsg(int num) 
+void printMsg(int num)
 {
     struct timespec systime;
     struct timespec time;
     struct timespec fixedtime;
     FILE *fp;
-    
+
     // Here is what kind of time you want to get
     if (mode == 1) {
         // FIXED: systime.tv_nsec means the delay time from the appointment time.
@@ -146,10 +146,10 @@ void printMsg(int num)
         get_system_time(&time);
         systime = time;
     }
-    
+
     rd_num += 1;
     if (mode == 1 || mode == 2) {
-        // sub delay time    
+        // sub delay time
         sub_ns(&fixedtime, &time, systime.tv_nsec);
         printf("\n====SYSTEM TIME: %ld(s).%09lu(ns|delay from appointment), (%d).\n", \
 		        systime.tv_sec, systime.tv_nsec, rd_num);
@@ -172,34 +172,34 @@ void printMsg(int num)
     }
 }
 
-void usage(char *file) 
+void usage(char *file)
 {
     printf(
-           "Usage: [sudo] %s [OPTION]\n\n"
-           "-h \t\t show help information.\n"
-           "-t \t\t set the timer start point.(default next secs(secs%%5==0))\n"
-           "-i \t\t set the timer interval.(default 5s)\n"
-           "-m \t\t set the mode to get time(default 0) :\n"
-           "\t\t\t m : 0 means system time.\n"
-           "\t\t\t m : 1 means pcie time from driver directly.\n"
-           "\t\t\t m : 2 means pcie time from hypercall.\n"
+           "\nUsage: [sudo] %s -m <mode number> [-t <HH:mm:ss> -i <interval in seconds>]\n\n"
+           "-h\t\t\t\tshow help information.\n"
+           "-t <HH:mm:ss>\t\t\tset the timer start point.(default next secs(secs%%5==0))\n"
+           "-i <interval in seconds>\tset the timer interval.(default 5s)\n"
+           "-m <mode number>\t\tset the mode to get time(default 0) :\n"
+           "\t\t\t\t\t-m 0 means system time.\n"
+           "\t\t\t\t\t-m 1 means pcie time from driver directly.\n"
+           "\t\t\t\t\t-m 2 means pcie time from hypercall.\n"
            "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 2\n", \
            file, file);
 }
 
 int main (int argc,char *argv[])
 {
-    // Get system call result to determine successful or failed   
+    // Get system call result to determine successful or failed
     int res = 0;
     int ch;
     unsigned long long utime;
     long ivtime = DE_IV;
-    // Register printMsg to SIGALRM    
-    signal(SIGALRM, printMsg); 
+    // Register printMsg to SIGALRM
+    signal(SIGALRM, printMsg);
     struct timeval tv;
     struct timezone tz;
-    struct itimerval tick;     
-    // Initialize struct  	  
+    struct itimerval tick;
+    // Initialize struct
     memset(&tick, 0, sizeof(tick));
     time_t timep;
     struct tm *tmp;
@@ -233,10 +233,10 @@ int main (int argc,char *argv[])
                     flag = 0;
                     break;
                 case 'i':
-                    ivtime = (long)(atof(optarg) * 1000000);   
+                    ivtime = (long)(atof(optarg) * 1000000);
                     break;
                 case 'm':
-                    mode = atoi(optarg);                   
+                    mode = atoi(optarg);
                     if (mode != 0 && mode != 1 && mode != 2) {
                         usage(argv[0]);
                         return -1;
@@ -251,38 +251,38 @@ int main (int argc,char *argv[])
                     } else {
                         // system time
                         mode_name = "system_time";
-                    } 
+                    }
                 default:
                     break;
              }
          }
     }
 
-    // Interval time to run function  	  
-    tick.it_interval.tv_sec = ivtime / 1000000;   // sec. 	  
-    tick.it_interval.tv_usec = ivtime % 1000000;  // usec. 
+    // Interval time to run function
+    tick.it_interval.tv_sec = ivtime / 1000000;   // sec.
+    tick.it_interval.tv_usec = ivtime % 1000000;  // usec.
 
     if (flag) {
         // next secs(secs % 5 == 0)
         printf("it will start in 5 secs......\n");
         tmp->tm_sec = tmp->tm_sec - (tmp->tm_sec) % 5 + 5;
-    }    
-
-    // Timeout to run function first time 
-    timep = mktime(tmp); 
-    gettimeofday(&tv, &tz);
-    utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);	   	  
-    tick.it_value.tv_sec = utime / 1000000;  // sec.  	  
-    tick.it_value.tv_usec = utime % 1000000; // usec. 
-   	  
-    // Set timer, ITIMER_REAL : real-time to decrease timer,  	  
-    //                          send SIGALRM when timeout  	  
-    res = setitimer(ITIMER_REAL, &tick, NULL);  	  
-    if (res) {  	  
-        printf("Set timer failed!!\n");  	  
     }
 
-    // print the timer info. 
+    // Timeout to run function first time
+    timep = mktime(tmp);
+    gettimeofday(&tv, &tz);
+    utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);
+    tick.it_value.tv_sec = utime / 1000000;  // sec.
+    tick.it_value.tv_usec = utime % 1000000; // usec.
+
+    // Set timer, ITIMER_REAL : real-time to decrease timer,
+    //                          send SIGALRM when timeout
+    res = setitimer(ITIMER_REAL, &tick, NULL);
+    if (res) {
+        printf("Set timer failed!!\n");
+    }
+
+    // print the timer info.
     printf("\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
         mode_name, tmp->tm_year+1900, tmp->tm_mon+1, tmp->tm_mday, \
         tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
@@ -294,15 +294,15 @@ int main (int argc,char *argv[])
 	  fclose(fp);
 
     printf("\twith interval %ld(s).%ld(us)\n", \
-    tick.it_interval.tv_sec, tick.it_interval.tv_usec);   
-    
+    tick.it_interval.tv_sec, tick.it_interval.tv_usec);
+
     fp = fopen(LOG_FILE, "a");
     fprintf(fp, "\twith interval %ld(s).%ld(us)\n"
 	"\tTIME FORMAT: seconds(from 1970-01-01), nanoseconds, ordinal\n"
         "====================================================================\n",
         tick.it_interval.tv_sec, tick.it_interval.tv_usec);
-    fclose(fp); 
-  
+    fclose(fp);
+
     if (mode == 1) {
         fd = open(PCIE_DEV, O_RDWR);
         if (fd == -1) {
@@ -310,15 +310,14 @@ int main (int argc,char *argv[])
             return -1;
         }
     }
-    
-    // Always sleep to catch SIGALRM signal   
-    while(1) {  
-        pause();  
+
+    // Always sleep to catch SIGALRM signal
+    while(1) {
+        pause();
     }
     if (mode == 1) {
         close(fd);
-    } 	 
+    }
     return 0;
-		
 }
 

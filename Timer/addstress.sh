@@ -10,7 +10,7 @@ if [ $1 ]; then
 	n=$1
 else
 	echo "Install failed. You didn't assign the quantity of cores."
-	echo "Usage: sudo sh $0 [quantity of cores]"
+	echo "Usage: sudo sh $0 <quantity of cores>"
   echo "--Example: sudo sh $0 2\n"
   exit
 fi

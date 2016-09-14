@@ -19,7 +19,7 @@
 #include <linux/ioctl.h>
 
 #define ADJ_FREQ_MAX  512000
-#define MASTER_TIMETRACEABLE_STATUS	0x08000000   //GPIO4代表timeTraceable标志位
+#define MASTER_TIMETRACEABLE_STATUS	0x08000000
 #define GPIO_DATA_ADDRESS_OFFSET 0xc08
 
 #define OFFSET_1980 315532800
@@ -190,12 +190,24 @@ void update_clock(struct timespec *offset)
     //         offset->tv_sec,offset->tv_nsec,observed_drift,adj);
 }
 
+void usage(char *file)
+{
+    printf(
+            "\nUsage:  %s -d [-s <sync period>]\n\n"
+            "-h \t\t show the command line help information.\n"
+            "-d	\t\t run the pcie sync in the non-daemon mode.\n"
+            "-t	\t\t display current pcie time.\n"
+            "-v	\t\t display sync result.\n"
+            "-s <sync period> \t\t set sync period (us).(default 10000(means 10ms as the minimal))\n", \
+            file);
+}
+
 int main(int argc,char *argv[])
 {
 
     long long offset;
     //struct timespec timeSystem;
-    //struct timespec timePCIE;    
+    //struct timespec timePCIE;
     struct timespec timeTemp;
     struct timespec offset_from_PCIE;
     int ret;
@@ -204,21 +216,10 @@ int main(int argc,char *argv[])
     int sync_period = 10000;
     if (argc >= 2) {
         int c;
-        while((c = getopt(argc, argv, "dvts?h")) != -1) {
+        while((c = getopt(argc, argv, "dvts:h")) != -1) {
             switch(c) {
-                case 'h':case '?':
-                    printf(
-                            "\nUsage:  %s [OPTION]\n\n"
-                            "-h\t\t\tshow the command line help information\n"
-                            "\n"
-                            "-d\t\t\trun the pcie sync in the non-daemon mode\n"
-                            "\n"
-                            "-t\t\t\t display current pcie time\n"
-                            "\n"
-                            "-v\t\t\tdisplay sync result\n"
-                            "\n"
-                            "-s\t\t\tset sync period (us)\n"
-                            , argv[0]);
+                case 'h':
+                    usage(argv[0]);
                     return 0;
                 case 'd':
                     if(already_running(LOCKFILE)) {
@@ -235,7 +236,7 @@ int main(int argc,char *argv[])
                                 "please try again!!\n", sync_period);
                     }
                     if (daemon(0,0) < 0) {
-                        perror("Failed to be a daemon.");
+                        perror("Failed to be a daemon.\n");
                         return -1;
                     }
                     break;
@@ -246,19 +247,19 @@ int main(int argc,char *argv[])
                     displayResult = 1;
                     break;
                 case 's':
-                    if(argv[2]!= NULL) {
-                        sync_period = atoi(argv[2]);
+                    if(optarg!= NULL) {
+                        sync_period = atoi(optarg);
                         if(sync_period >= 10000) {
                             printf("Set period ok,\n"
                                     "sync period is %d ms\n", sync_period / 1000);
                         } else {
                             printf("Set sync period failed,\n"
-                                    "Please check sync period[need > 10ms]! \n");
+                                    "Please check sync period[need > 10ms]!\n");
                             return -1;
                         }
                     } else {
                         printf("Set sync period failed, \
-                                please check sync period[need > 10ms]! \n");
+                                please check sync period[need > 10ms]!\n");
                         return -1;
                     }
                     break;
@@ -267,19 +268,7 @@ int main(int argc,char *argv[])
             }
         }
     } else {
-        printf(
-                "\nUsage:  %s [OPTION]\n\n"
-                "-h \t\t\t\t show the command line help information\n"
-                "\n"
-                "-d	\t\t\t run the pcie sync in the non-daemon mode\n"
-                "\n"
-                "-t	\t\t\t display current pcie time\n"
-                "\n"
-                "-v	\t\t\t display sync result\n"
-                "\n"
-                "-s	\t\t\t set sync period(us)\n"
-                "\n"
-                , argv[0]);
+        usage(argv[0]);
         return -1;
     }
 
@@ -329,5 +318,4 @@ int main(int argc,char *argv[])
             break;
         }
     }
-    
 }

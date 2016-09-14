@@ -139,7 +139,7 @@ void update_clock (struct timespec *offset)
 
 
 #define THRESHOLD   100000000   //100ms
-  
+
     if(offset->tv_sec || abs (offset->tv_nsec) > THRESHOLD) {
         struct timespec timeTmpA;
         struct timespec timeTmpB;
@@ -152,7 +152,7 @@ void update_clock (struct timespec *offset)
         get_time(&timeTmpB);   // Get current time #2
         /* Get the gap time #3 between two statements */
         sub_time(&timeTmpC, &timeTmpB, &timeTmpA);
-        
+
         get_time(&timeTmpD);   // Get current time #4 and base on this time
         /* 1st sub the offset */
         sub_time(&timeTmpE, &timeTmpD, offset);
@@ -162,7 +162,7 @@ void update_clock (struct timespec *offset)
         set_time(&timeTmpF);
         //printf ("-------------timeTmpF %d.%d\n",timeTmpF.tv_sec,timeTmpF.tv_nsec);
     } else {
-        /* 
+        /*
          * Offset from master is less than one second.  Use the the PI controller
          * to adjust the time
          */
@@ -171,7 +171,7 @@ void update_clock (struct timespec *offset)
 
         /* the accumulator for the I component */
         observed_drift += offset->tv_nsec / ai;
-           
+
         /* clamp the accumulator to ADJ_FREQ_MAX for sanity */
         if (observed_drift > ADJ_FREQ_MAX) {
             observed_drift =  ADJ_FREQ_MAX;
@@ -183,6 +183,18 @@ void update_clock (struct timespec *offset)
         adj_freq (-adj);
     }
     //printf ("offset %d.%d observed_drift %d adj %d\n",offset->tv_sec,offset->tv_nsec,observed_drift,adj);
+}
+
+void usage(char *file)
+{
+    printf(
+            "\nUsage:  %s -d [-s <sync period>]\n\n"
+            "-h \t\t show the command line help information.\n"
+            "-d	\t\t run the pcie sync in the non-daemon mode.\n"
+            "-t	\t\t display current pcie time.\n"
+            "-v	\t\t display sync result.\n"
+            "-s <sync period> \t\t set sync period (us).(default 10000(means 10ms as the minimal))\n", \
+            file);
 }
 
 int main (int argc,char *argv[])
@@ -198,79 +210,55 @@ int main (int argc,char *argv[])
     int sync_period = 10000;
     if (argc >= 2) {
         int c;
-        while((c = getopt(argc, argv, "dvts?h")) != -1) {
+        while((c = getopt(argc, argv, "dvts:h")) != -1) {
             switch(c) {
             case 'h':
-            case '?':
-                printf(
-                    "\nUsage:  %s [OPTION]\n\n"
-                    "-h \t\t\t\t show the command line help information\n"
-                    "\n"
-                    "-d	\t\t\t run the pcie sync in the non-daemon mode\n"
-                    "\n"
-                    "-t	\t\t\t display current pcie time\n"
-                    "\n"
-                    "-v	\t\t\t display sync result\n"
-                    "\n"
-                    "-s	\t\t\t set sync period (us)\n"
-                    , argv[0]);
+                usage(argv[0]);
                 return 0;  // If we are here, then Help was requested and printed, return done
-            case 'd':	
+            case 'd':
                 if(already_running(LOCKFILE)) {
-                    printf ("Sync Process has already running. Use: %s -t to display \n", argv[0]);
+                    printf ("Sync Process has already running. Use: %s -t to display\n", argv[0]);
                     return;
                 }
                 if(sync_period >= 10000) {
-                    printf ("----------Sync process Successfull, sync period is %d ms \n ", sync_period /1000);
+                    printf ("----------Sync process Successfull, sync period is %d ms\n", sync_period /1000);
                 } else {
-                    printf ("----------Sync process failed, sync period %d is too short,please try again!!\n ", sync_period);
+                    printf ("----------Sync process failed, sync period %d is too short,please try again!!\n", sync_period);
                 }
                 if (daemon (0,0) < 0) {
-                    perror ("Failed to be a daemon.");
+                    perror ("Failed to be a daemon.\n");
                     return -1;
                 }
                 break;
-            case 't':	
+            case 't':
                 displayPCIETime = 1;
-                break;	
-            case 'v':	
+                break;
+            case 'v':
                 displayResult = 1;
                 break;
 		    case 's':
-                if(argv[2]!= NULL) {				
-                    sync_period = atoi(argv[2]);
+                if(optarg!= NULL) {
+                    sync_period = atoi(optarg);
                     if(sync_period>= 10000) {
-                        printf ("Set period ok , sync period is %d ms  \n",sync_period /1000);	
+                        printf ("Set period ok , sync period is %d ms  \n",sync_period /1000);
                     } else {
-                        printf ("Set sync period failed, Please check sync period[need > 10ms]! \n");
-                        return -1;	
+                        printf ("Set sync period failed, Please check sync period[need > 10ms]!\n");
+                        return -1;
                     }
                 } else {
-                    printf ("Set sync period failed, please check sync period[need > 10ms]! \n");
-                    return -1;	
+                    printf ("Set sync period failed, please check sync period[need > 10ms]!\n");
+                    return -1;
                 }
                 break;
-            default:	
+            default:
                 break;
             }
         }
     } else { // upper if (argc >= 2) then else...
-        printf(
-            "\nUsage:  %s [OPTION]\n\n"
-            "-h \t\t\t\t show the command line help information\n"
-            "\n"
-            "-d	\t\t\t run the pcie sync in the non-daemon mode\n"
-            "\n"
-            "-t	\t\t\t display current pcie time\n"
-            "\n"
-            "-v	\t\t\t display sync result\n"
-            "\n"
-            "-s	\t\t\t set sync period\n"
-            "\n"
-            , argv[0]);
+	usage(argv[0]);
         return -1;
      }
-		
+
     fd = open (PCIE_DEV,O_RDWR);
     if (fd == -1) {
         printf ("Please check the PCIE card and try again. For Help input: sync -h \n");
@@ -281,19 +269,19 @@ int main (int argc,char *argv[])
         printf ("Sync Process has already been started. Use: sync -h  to display \n");
         return 0;
     }
-	 
+
     while (1) {
-        get_time (&timeSystem); 
+        get_time (&timeSystem);
         ioctl (fd, HOST_GET_PCIE_TIME, &timePCIE);
         if (ioctl(fd, HOST_GET_OFFSET, &offset) >= 0) {
-            if(displayPCIETime && already_running(LOCKFILE)) {	
+            if(displayPCIETime && already_running(LOCKFILE)) {
                 offset_from_PCIE.tv_sec = offset / 1000000000;
-                offset_from_PCIE.tv_nsec = offset % 1000000000;	
+                offset_from_PCIE.tv_nsec = offset % 1000000000;
                 printf ("----------Syncing process is running, offset is  %ld (ns) per %d (ms)\n",
                 offset_from_PCIE.tv_nsec,sync_period /1000);
-            } else {	
+            } else {
                 offset_from_PCIE.tv_sec = offset / 1000000000;
-                offset_from_PCIE.tv_nsec = offset % 1000000000;	
+                offset_from_PCIE.tv_nsec = offset % 1000000000;
                 //if(timePCIE.tv_sec < OFFSET_1990) {
                 //  if(displayResult) {
                 //      printf ("----------The Master clock has not been ready! Please wait or Use sync -h to try again. \n");
@@ -304,11 +292,11 @@ int main (int argc,char *argv[])
                 }
             }
         }
-        if(sync_period >=10000) { //It need set the sync period > 10 ms      
+        if(sync_period >=10000) { //It need set the sync period > 10 ms
             usleep (sync_period);
         } else {
             break;
         }
     }
-    
+
 }

@@ -13,9 +13,9 @@ if [ $1 ]; then
 	interface=$1
 else
 	echo "Install failed. You didn't assign the interface."
-	echo "Usage: sudo sh $0 [interface]"
-  echo "--Example: sudo sh $0 eth0\n"
-  exit
+	echo "Usage: sudo sh $0 <interface>\n"
+  	echo "--Example: sudo sh $0 eth0"
+  	exit
 fi
 
 chmod $fmode ./${target}

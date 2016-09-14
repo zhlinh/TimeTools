@@ -50,3 +50,4 @@ long main (int argc,char *argv[])
     printf("%ld(s), %09lu(ns)\n", time_s, time_ns);
     return 0;
 }
+

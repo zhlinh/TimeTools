@@ -23,5 +23,6 @@
 !*.sh
 !*.conf
 !*.md
+!.travis.yml
 
 # you can add the special files here to ignore

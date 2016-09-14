@@ -10,24 +10,30 @@ PWD := $(shell pwd)
 #INSTALLDIR = /home/ben/boardnet
 
 #CC=/home/lemon/freescale-2010.09/bin/powerpc-linux-gnu-gcc
-CC    = gcc
-PROGRAM = time_sync
-
+CC = gcc
+RM = rm
+SYNC_DAEMON = time_sync
 
 obj-m := pcie_host_device.o
 
+all:
+	@echo $(MAKE)...
+	$(MAKE) modules
+	$(MAKE) sync
 
 modules:
-	echo $(MAKE)
+	@echo $(MAKE)...
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 #modules_install:
 #cp pcie_host_device.ko $(INSTALLDIR)
 
 sync:
-	gcc time_sync.c -o  $(PROGRAM) -lrt
-	
-clean:
-	rm -rf *.o  Module.*  modules.*  *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions $(PROGRAM)
+	@echo $(MAKE)...
+	$(CC) time_sync.c -o $(SYNC_DAEMON) -lrt
 
-.PHONY: modules modules_install clean
+clean:
+	@echo $(MAKE)...
+	$(RM) -rf *.o Module.* modules.* *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions $(SYNC_DAEMON)
+
+.PHONY: all modules modules_install sync clean
