@@ -54,7 +54,7 @@ gcc编译环境。
            m : 0 means system time.
            m : 1 means pcie time from driver directly.
            m : 2 means pcie time from hypercall.
-           m : 3 means hypercall but do nothing
+           m : 3 means hypercall but do nothing.
    Example: ./main_user_timer -t 8:30:0 -m 2
    ```
    **注意: 至少需要用-t和-m并添加相应参数选择定时器开始时间和获取时间的方式。**
@@ -85,6 +85,7 @@ gcc编译环境。
         m : 0 means system time.
         m : 1 means pcie time from driver directly.
         m : 2 means pcie time from hypercall.
+        m : 3 means reference time from timer, only in integer interval.
    Example: ./tcp_client -m 2 -a 192.168.1.153 -p 8885
    ```
    只需在两台机子上运行`tcp_client`将数据传给第三台机子上的可视化软件，

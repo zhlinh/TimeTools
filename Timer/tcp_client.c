@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 
 // default interval 5s
-#define DE_IV 5000000
+#define DFT_IV 5000000
 
 // define ns
 #define NSEC 1000000000
@@ -72,6 +72,10 @@ static void sub_ns(struct timespec *result, struct timespec *x, long y);
 
 void int_to_byte(int, unsigned char *);
 void print_msg(int);
+
+// global values
+static long iv_s;
+static time_t timep;
 
 static int rd_num = 0;
 int s;  // socket descriptor
@@ -166,6 +170,11 @@ void print_msg(int num) {
     struct tm *tmp;
 
     // Here is what kind of time you want to get
+    if (mode == 0) {
+        // system time, system time doesn't need fix
+        get_system_time(&time);
+        systime = time;    
+    }
     if (mode == 1) {
         // FIXED: systime.tv_nsec means the delay time from the appointment time.
         get_system_time(&systime);
@@ -177,9 +186,8 @@ void print_msg(int num) {
         // pcie time from hypercall
         get_hc_pcie_time(&time);
     } else {
-        // system time, system time doesn't need fix
-        get_system_time(&time);
-        systime = time;
+        get_system_time(&systime);
+        timep += iv_s;
     }
 
     rd_num += 1;
@@ -200,7 +208,7 @@ void print_msg(int num) {
         // buf[12]-buf[19] is tv_sec and buf[20] - buf[23] is tc_sec, LE
         int64_to_byte((long long)fixedtime.tv_sec, &buf[12]);
         int32_to_byte((unsigned int)fixedtime.tv_nsec, &buf[20]);
-    } else {
+    } else if (mode == 0) {
         //system time doesn't need fix
         printf("called %s %ld(s).%09lu(ns), (%d).\n", \
 		        mode_name, time.tv_sec, time.tv_nsec, rd_num);
@@ -211,6 +219,17 @@ void print_msg(int num) {
         // buf[12]-buf[19] is tv_sec and buf[20] - buf[23] is tc_sec, LE
         int64_to_byte((long long)time.tv_sec, &buf[12]);
         int32_to_byte((unsigned int)time.tv_nsec, &buf[20]);
+    } else {
+        //system time doesn't need fix
+        printf("called %s %ld(s).%09u(ns), (%d).\n", \
+		        mode_name, timep, 0, rd_num);
+        fp = fopen(LOG_FILE, "a");
+        fprintf(fp, "%ld, %09u, %d\n", \
+		        timep, 0, rd_num);
+        fclose(fp);
+        // buf[12]-buf[19] is tv_sec and buf[20] - buf[23] is tc_sec, LE
+        int64_to_byte((long long)timep, &buf[12]);
+        int32_to_byte((unsigned int)0, &buf[20]);
     }
 
     tmp = localtime(&systime.tv_sec);
@@ -235,6 +254,7 @@ void usage(char *file) {
            "\t\t\t\t\t-m 0 means system time.\n"
            "\t\t\t\t\t-m 1 means pcie time from driver directly.\n"
            "\t\t\t\t\t-m 2 means pcie time from hypercall.\n"
+           "\t\t\t\t\t-m 3 means reference time from timer, only in integer interval.\n"
            "\nExample: sudo %s -t 8:30:0 -i 5.3 -m 2 -a 192.168.1.153 -p 8885\n", \
            file, file);
 }
@@ -245,13 +265,12 @@ int main (int argc,char *argv[])
     int res = 0;  // return result
     int ch;  // get char from command line
     unsigned long long utime;
-    long ivtime = DE_IV;
+    long ivtime = DFT_IV;
     struct timeval tv;
     struct timezone tz;
     struct itimerval tick;
     // Initialize struct
     memset(&tick, 0, sizeof(tick));
-    time_t timep;
     struct tm *tmp;
     char *substr;
     int flag = 1;
@@ -299,11 +318,16 @@ int main (int argc,char *argv[])
                     break;
                 case 'm':
                     mode = atoi(optarg);
-                    if (mode != 0 && mode != 1 && mode != 2) {
+                    // illegal input
+                    if (mode < 0 || mode > 3) {
                         usage(argv[0]);
                         return -1;
                     }
                     // define the mode_name
+                    if (mode == 0) {
+                        // system time
+                        mode_name = "system_time";
+                    }
                     if (mode == 1) {
                         // pcie time from driver directly
                         mode_name = "io_pcie_time";
@@ -311,8 +335,8 @@ int main (int argc,char *argv[])
                         // pcie time from hypercall
                         mode_name = "hc_pcie_time";
                     } else {
-                        // system time
-                        mode_name = "system_time";
+                        // reference time from timer, only in integer interval
+                        mode_name = "ref_timer_time";
                     }
                     break;
                 default:
@@ -324,7 +348,8 @@ int main (int argc,char *argv[])
         return 0;
     }
     // Interval time to run function
-    tick.it_interval.tv_sec = ivtime / 1000000;   // sec.
+    iv_s = ivtime / 1000000;
+    tick.it_interval.tv_sec = iv_s;   // sec.
     tick.it_interval.tv_usec = ivtime % 1000000;  // usec.
 
     if (flag) {

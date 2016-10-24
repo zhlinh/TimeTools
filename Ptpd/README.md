@@ -14,7 +14,7 @@ gcc编译环境。
 
 1. cd到本目录下。
 
-2. Ptpd 软件的安装。
+2. Ptpd软件的安装：
 
         tar -vxzf ptpd-2.3.1.tar.gz
         cd ptpd-2.3.1/
