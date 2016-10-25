@@ -15,7 +15,7 @@ else
   exit
 fi
 
-gcc ${LOAD}.c -o  ${LOAD} -lrt
+gcc ${LOAD}.c -o ${LOAD} -lrt
 
 echo "quantity of cores is $n"
 while [ $n -gt 0 ]

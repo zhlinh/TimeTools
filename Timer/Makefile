@@ -11,7 +11,7 @@ all:
 	@echo $(MAKE)...
 	$(CC) $(MAIN_TIMER).c -o $(MAIN_TIMER) -lrt
 	$(CC) $(POSIX_TIMER).c -o $(POSIX_TIMER) -lrt
-	$(CC) $(LOAD).c -o  $(LOAD) -lrt
+	$(CC) $(LOAD).c -o $(LOAD) -lrt
 	$(CC) $(RDTIME_COST).c -o $(RDTIME_COST) -lrt
 	$(CC) $(TCP_CLIENT).c -o $(TCP_CLIENT) -lrt
 	$(CC) $(TCP_SERVER).c -o $(TCP_SERVER) -lrt
