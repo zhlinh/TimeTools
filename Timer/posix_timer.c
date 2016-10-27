@@ -29,7 +29,7 @@
 #define NSEC 1000000000
 
 // default interval 5s
-#define DE_IV 5
+#define DFT_IV_SEC 5
 
 
 
@@ -198,7 +198,7 @@ int main(int argc,char *argv[])
     int res = 0;
     int ch;
     unsigned long long starttime;
-    unsigned long long ivtime = (unsigned long long)DE_IV * NSEC;
+    unsigned long long ivtime = (unsigned long long)DFT_IV_SEC * NSEC;
     // Register printMsg to SIGALRM
     struct itimerval tick;
     // Initialize struct

@@ -26,7 +26,7 @@
 #include <string.h>
 
 // default interval 5s
-#define DE_IV 5000000
+#define DFT_IV 5000000
 
 #define NSEC 1000000000
 
@@ -162,7 +162,7 @@ int main (int argc,char *argv[])
     int res = 0;
     int ch;
     unsigned long long utime;
-    long ivtime = DE_IV;
+    long ivtime = DFT_IV;
     // Register printMsg to SIGALRM
     signal(SIGALRM, printMsg);
     struct timeval tv;
