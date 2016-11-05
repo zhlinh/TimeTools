@@ -363,13 +363,13 @@ int main (int argc,char *argv[])
     utime = timep * 1000000 - (tv.tv_sec * 1000000 + tv.tv_usec);
     tick.it_value.tv_sec = utime / 1000000;  // sec.
     tick.it_value.tv_usec = utime % 1000000; // usec.
-
     // Set timer, ITIMER_REAL : real-time to decrease timer,
     //                          send SIGALRM when timeout
     res = setitimer(ITIMER_REAL, &tick, NULL);
     if (res) {
         printf("Set timer failed!!\n");
     }
+    timep -= iv_s; // let the start point before iv_s to be increased next time
 
     // print the timer info.
     printf("\tset timer to get %s at %02d-%02d-%02d %02d:%02d:%02d\n", \
