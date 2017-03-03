@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Usage: sudo sh [filename] [interface]
+# Usage: sudo sh <filename> <interface>
 # It will sync using ptpd2 software.
 # Ptpd2 will work on master mode.
 

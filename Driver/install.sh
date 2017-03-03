@@ -1,6 +1,8 @@
 #!/bin/sh
 #by ben
 
+# Usage: sudo sh <filename>
+
 module="pcie_host_device"
 device="pcietime0"
 mode="664"

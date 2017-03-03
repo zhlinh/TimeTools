@@ -13,6 +13,8 @@
 /Ptpd/ptpd-2.3.1
 !/Driver/
 !/Driver/**/
+!/Condition/
+!/Condition/**/
 
 # add files
 !*.cpp

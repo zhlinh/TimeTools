@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Usage: sudo sh [filename]
+# Usage: sudo sh <filename>
 # It will sync using host_sync.c with IOCTL
 
 HOST_IO_SYNC=host_sync

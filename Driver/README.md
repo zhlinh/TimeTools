@@ -9,13 +9,13 @@ Linux系统环境是否安装好gcc编译环境与相关lib开发库，kernel-de
 
 > 驱动安装步骤
 
-0. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
+1. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
 
         sudo su root
 
-1. cd到本目录下。
+2. cd到本目录下。
 
-2. 在当前目录下运行`sh install.sh`，即完成安装。
+3. 在当前目录下运行`sh install.sh`，即完成安装。
 
 > 注意事项
 

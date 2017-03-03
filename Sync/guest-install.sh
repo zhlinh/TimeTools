@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Usage: sudo sh [filename]
+# Usage: sudo sh <filename>
 # It will sync using guest_sync.c with Hypercall
 
 GUEST_HC_SYNC=guest_sync

@@ -8,13 +8,13 @@ gcc编译环境。
 
 > 安装和使用
 
-0. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
+1. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
 
         sudo su root
 
-1. cd到本目录下。
+2. cd到本目录下。
 
-2. Ptpd软件的安装：
+3. Ptpd软件的安装：
 
         tar -vxzf ptpd-2.3.1.tar.gz
         cd ptpd-2.3.1/
@@ -22,15 +22,15 @@ gcc编译环境。
         make
         make install
 
-3. 如果本机作为时间服务器master，使用的网络接口为eth0(请根据实际情况更改)，则运行：
+4. 如果本机作为时间服务器master，使用的网络接口为eth0(请根据实际情况更改)，则运行：
 
         sh master-install.sh eth0
 
-3. 如果本机作为客户端slave，使用的网络接口为eth0(请根据实际情况更改)，则运行：
+4. 如果本机作为客户端slave，使用的网络接口为eth0(请根据实际情况更改)，则运行：
 
         sh slave-install.sh eth0
 
-4. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
+5. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
 
         sh uninstall.sh
 

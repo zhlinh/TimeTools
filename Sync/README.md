@@ -8,21 +8,21 @@ gcc编译环境。
 
 > 安装和使用
 
-0. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
+1. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
 
         sudo su root
 
-1. cd到本目录下。
+2. cd到本目录下。
 
-2. 如果是在Host中，那就需要用IO的方式获取板卡时间。运行：
+3. 如果是在Host中，那就需要用IO的方式获取板卡时间。运行：
 
         sh host-install.sh
 
-2. 如果是在Guest中，那就需要用Hypercall的方式获取板卡时间，运行：
+3. 如果是在Guest中，那就需要用Hypercall的方式获取板卡时间，运行：
 
         sh guest-install.sh
 
-3. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
+4. 取消同步(一般用不到，重启也可达到相同效果)，则可使用：
 
         sh uninstall.sh
 

@@ -8,15 +8,15 @@ gcc编译环境。
 
 > 安装和使用
 
-0. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
+1. 注意需先获取root权限。Ubuntu下获取root权限的方式为：
 
         sudo su root
 
-1. cd到本目录下，并编译本目录下所有C源文件。
+2. cd到本目录下，并编译本目录下所有C源文件。
 
         make
 
-2. 主要的定时器[**main_user_timer**]，默认每隔5秒读取一次时间，并将数据保存在本目录下`timer.log`(无此文件时会自动创建)中。
+3. 主要的定时器[**main_user_timer**]，默认每隔5秒读取一次时间，并将数据保存在本目录下`timer.log`(无此文件时会自动创建)中。
 
    Usuage:
    ```
@@ -61,14 +61,6 @@ gcc编译环境。
    其使用方法与`main_user_timer`基本相同。
    只是-m多了一个3的选择，表示进入hypercall但并不执行获取时间操作立即返回的所需时间。
 
-4. 增加CPU负载的工具[**load**]。如需增加CPU 6(请根据需要自行调整)个核的负载：
-
-        sh addstress.sh 6
-
-   如果想取消增加CPU负载，则可运行
-
-        sh delstress.sh
-
 5. 基于TCP定时传输所获取时间的工具[**tcp_client, tcp_server**]。定时器默认间隔为5s。
    其中tcp_server仅用于在本地环路测试tcp_client所传输的数据是否正确。
    而tcp_client可配合目前用C#开发的Windows平台上的可视化工具，可以显示实时同步效果。
@@ -100,4 +92,3 @@ gcc编译环境。
 
 make生成可执行文件之后，运行`./[文件名] -h`均可获取每个可执行文件的使用方法。
 
-`load`除外，因其无复杂参数选择，建议配合`addstress.sh`和`delstress.sh`使用。
